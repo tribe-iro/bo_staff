@@ -1,0 +1,14 @@
+[
+  {
+    "id": "repo-conventions",
+    "title": "Repository Conventions",
+    "description": "Apply local repository editing conventions.",
+    "instruction_text": "Prefer minimal, local changes. Preserve existing public APIs unless the caller explicitly requests a breaking change."
+  },
+  {
+    "id": "review",
+    "title": "Code Review",
+    "description": "Focus on findings, regressions, and missing tests.",
+    "instruction_text": "Prioritize bugs, regressions, and missing tests. Keep summaries short and put findings first."
+  }
+]

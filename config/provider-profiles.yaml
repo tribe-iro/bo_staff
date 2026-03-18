@@ -1,0 +1,68 @@
+version: 2026-03-14
+providers:
+  codex:
+    managed:
+      performance_tiers:
+        fast: gpt-5.3-codex-spark
+        balanced: gpt-5-codex
+        high: gpt-5.4
+        frontier: gpt-5.4
+      reasoning_tiers:
+        none: {}
+        light:
+          control: low
+        standard:
+          control: medium
+        deep:
+          control: high
+    pins:
+      2026-03-14:
+        performance_tiers:
+          fast: gpt-5.3-codex-spark
+          balanced: gpt-5-codex
+          high: gpt-5.4
+          frontier: gpt-5.4
+        reasoning_tiers:
+          none: {}
+          light:
+            control: low
+          standard:
+            control: medium
+          deep:
+            control: high
+
+  claude:
+    managed:
+      performance_tiers:
+        # Claude currently aliases fast/balanced and high/frontier onto the same
+        # provider models. The API tiers remain stable even though provider
+        # differentiation is narrower today.
+        fast: claude-sonnet-4-6
+        balanced: claude-sonnet-4-6
+        high: claude-opus-4-6
+        frontier: claude-opus-4-6
+      reasoning_tiers:
+        none: {}
+        light:
+          control: low
+        standard:
+          control: medium
+        deep:
+          control: high
+    pins:
+      2026-03-14:
+        performance_tiers:
+          # Pinned Claude profiles intentionally preserve the same current tier
+          # aliasing as managed resolution.
+          fast: claude-sonnet-4-6
+          balanced: claude-sonnet-4-6
+          high: claude-opus-4-6
+          frontier: claude-opus-4-6
+        reasoning_tiers:
+          none: {}
+          light:
+            control: low
+          standard:
+            control: medium
+          deep:
+            control: high

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "filesystem",
+    "transport": "stdio",
+    "config": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "provider_compatibility": ["codex", "claude"],
+    "safety_classification": "workspace"
+  },
+  {
+    "id": "github",
+    "transport": "stdio",
+    "config": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"]
+    },
+    "provider_compatibility": ["codex", "claude"],
+    "safety_classification": "network"
+  }
+]
