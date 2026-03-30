@@ -1,382 +1,313 @@
-import { resolveExecutionProfile } from "../config/execution-profiles.ts";
-import {
-  DEFAULT_MAX_CONCURRENT_EXECUTIONS,
-  DEFAULT_SESSIONLESS_EXECUTION_RETENTION_MS
-} from "../config/defaults.ts";
+import { DEFAULT_MAX_CONCURRENT_EXECUTIONS } from "../config/defaults.ts";
 import { RequestResolutionError } from "../errors.ts";
-import type { BackendName, ExecutionError, ExecutionResponse, NormalizedExecutionRequest } from "../types.ts";
+import type { BackendName, ExecutionProfileOutcome, NormalizedExecutionRequest } from "../types.ts";
 import type { BackendAdapter } from "../adapters/types.ts";
-import type { SessionResolution } from "./session-manager.ts";
 import type { WorkspaceRuntime } from "./workspace-manager.ts";
-import type { BoStaffRepository, ExecutionRecord } from "../persistence/types.ts";
-import { EventLog } from "./event-log.ts";
+import type { PromptEnvelope } from "./prompt-envelope.ts";
+import type { EphemeralExecutionState, ExecutionLease } from "../bomcp/types.ts";
+import { EnvelopeBuilder } from "../bomcp/envelope-builder.ts";
+import { ControllerStream, type StreamWriter } from "../bomcp/controller-stream.ts";
+import { buildLease } from "../bomcp/lease.ts";
+import { BomcpToolHandler } from "../bomcp/tool-handler.ts";
+import { createIpcServer, type IpcServer } from "../bomcp/ipc-channel.ts";
+import { createEphemeralState } from "./execution-state.ts";
 import { buildExecutionPrompt } from "./prompt.ts";
-import { SessionManager } from "./session-manager.ts";
 import { WorkspaceManager } from "./workspace-manager.ts";
-import { resolveGuarantees } from "./guarantee-resolution.ts";
-import { buildRejectedExecutionSummary } from "../execution-summary.ts";
-import { generateHandle, nowIso } from "../utils.ts";
 import { ExecutionAdmissionController } from "./execution-admission.ts";
-import { SessionLeaseManager } from "./session-leases.ts";
-import { isTerminalStatus } from "../core/index.ts";
-import {
-  buildPersistenceSummary,
-  buildRejectedWorkspaceSummary,
-  buildWorkspaceRecord,
-  createProviderAccumulation,
-  formatExecutionError,
-  resolveExecutionProfileSafe,
-  type ProviderAccumulation
-} from "./execution-state.ts";
-import { recordExecutionEvent } from "./event-projection.ts";
-import {
-  emitImmediateExecutionResponse,
-  finalizeResolvedExecution,
-  finalizeRuntimeFailure
-} from "./execution-finalization.ts";
-import { collectProviderResult } from "./provider-collector.ts";
+import { generateHandle } from "../utils.ts";
+import { collectProviderResult, type ProviderResult } from "./provider-collector.ts";
+import { finalizeExecution } from "./execution-finalization.ts";
+import * as path from "node:path";
+import { reportInternalError } from "../internal-reporting.ts";
 
-interface ExecutionRunContext {
-  executionId: string;
-  requestId: string;
-  request: NormalizedExecutionRequest;
-  log: EventLog;
-  guaranteeResolution: ReturnType<typeof resolveGuarantees>;
-}
+const HEARTBEAT_INTERVAL_MS = 15_000;
 
-interface ResolvedExecutionContext extends ExecutionRunContext {
-  executionProfile: Awaited<ReturnType<typeof resolveExecutionProfile>>;
-  session: SessionResolution;
-  workspace: WorkspaceRuntime;
-  adapter: BackendAdapter;
-  prompt: string;
+interface ActiveExecution {
+  state: EphemeralExecutionState;
+  abortController: AbortController;
+  stream: ControllerStream;
+  ipcServer: IpcServer;
+  heartbeatTimer?: ReturnType<typeof setInterval>;
 }
 
 export class ExecutionManager {
   private readonly adapters: Map<BackendName, BackendAdapter>;
-  private readonly sessionManager: SessionManager;
   private readonly workspaceManager: WorkspaceManager;
-  private readonly repository: BoStaffRepository;
-  private readonly profilesFile?: string;
   private readonly admission: ExecutionAdmissionController;
-  private readonly sessionLeases = new SessionLeaseManager();
-  private readonly activeExecutionControllers = new Map<string, AbortController>();
-  private readonly sessionlessExecutionRetentionMs: number;
+  private readonly activeExecutions = new Map<string, ActiveExecution>();
+  private readonly dataDir: string;
 
   constructor(input: {
     adapters: BackendAdapter[];
-    repository: BoStaffRepository;
     dataDir: string;
-    profilesFile?: string;
     maxConcurrentExecutions?: number;
-    sessionlessExecutionRetentionMs?: number;
   }) {
-    this.adapters = new Map(input.adapters.map((adapter) => [adapter.backend, adapter]));
-    this.sessionManager = new SessionManager(input.repository);
+    this.adapters = new Map(input.adapters.map((a) => [a.backend, a]));
     this.workspaceManager = new WorkspaceManager(input.dataDir);
-    this.repository = input.repository;
-    this.profilesFile = input.profilesFile;
-    this.admission = new ExecutionAdmissionController(input.maxConcurrentExecutions ?? DEFAULT_MAX_CONCURRENT_EXECUTIONS);
-    this.sessionlessExecutionRetentionMs = input.sessionlessExecutionRetentionMs ?? DEFAULT_SESSIONLESS_EXECUTION_RETENTION_MS;
+    this.admission = new ExecutionAdmissionController(
+      input.maxConcurrentExecutions ?? DEFAULT_MAX_CONCURRENT_EXECUTIONS,
+    );
+    this.dataDir = input.dataDir;
   }
 
   async execute(input: {
     requestId: string;
     request: NormalizedExecutionRequest;
-    onEvent?: (event: import("../types.ts").BoStaffEvent) => Promise<void> | void;
-    onExecutionCreated?: (executionId: string) => Promise<void> | void;
-  }): Promise<{ httpStatus: number; response: ExecutionResponse; events: ReturnType<EventLog["list"]> }> {
+    lease?: { allowed_tools?: string[]; timeout_seconds?: number };
+    streamWriter: StreamWriter;
+    signal: AbortSignal;
+  }): Promise<void> {
     const executionId = generateHandle("exec");
-    const log = new EventLog(input.requestId, executionId, input.onEvent);
-    await input.onExecutionCreated?.(executionId);
-    const runContext: ExecutionRunContext = {
+    const lease = buildLease({
       executionId,
-      requestId: input.requestId,
-      request: input.request,
-      log,
-      guaranteeResolution: resolveGuarantees({ request: input.request })
-    };
+      allowedTools: input.lease?.allowed_tools,
+      timeoutSeconds: input.lease?.timeout_seconds,
+    });
+    const state = createEphemeralState(executionId, input.request.backend, lease);
+    const envelopeBuilder = new EnvelopeBuilder(executionId);
+    const stream = new ControllerStream(input.streamWriter, envelopeBuilder);
 
+    // Admission
     if (!this.admission.tryAcquire()) {
-      return this.emitImmediateRejection(runContext, {
-        httpStatus: 503,
-        error: {
-          code: this.admission.isDraining() ? "gateway_draining" : "gateway_busy",
-          message: this.admission.isDraining()
-            ? "bo_staff is draining and not accepting new executions."
-            : "bo_staff has reached the maximum number of concurrent executions."
-        }
+      await stream.emitRuntime("system.error", {
+        code: this.admission.isDraining() ? "gateway_draining" : "gateway_busy",
+        message: "bo_staff cannot accept new executions right now.",
       });
-    }
-
-    const leasedSessionHandle = input.request.session.mode === "continue" || input.request.session.mode === "fork"
-      ? input.request.session.handle
-      : null;
-    if (!this.sessionLeases.tryAcquire(leasedSessionHandle)) {
-      this.admission.release();
-      return this.emitImmediateRejection(runContext, {
-        httpStatus: 409,
-        error: {
-          code: "session_busy",
-          message: `Session handle is already executing: ${leasedSessionHandle}`
-        }
-      });
+      return;
     }
 
     try {
-      const resolved = await this.resolveExecutionContext(runContext);
-      if (!resolved.ok) {
-        const immediate = await emitImmediateExecutionResponse({
-          repository: this.repository,
-          sessionlessExecutionRetentionMs: this.sessionlessExecutionRetentionMs,
-          context: runContext,
-          httpStatus: resolved.httpStatus,
-          response: resolved.response,
-          terminalEvent: "execution.rejected"
-        });
-        return {
-          httpStatus: immediate.httpStatus,
-          response: immediate.response,
-          events: runContext.log.list()
-        };
-      }
-
-      return await this.executeResolved(resolved.value);
+      await this.executeInner(input, executionId, lease, state, stream);
     } finally {
-      this.sessionLeases.release(leasedSessionHandle);
+      await this.teardown(executionId);
       this.admission.release();
     }
   }
 
+  private async executeInner(
+    input: {
+      requestId: string;
+      request: NormalizedExecutionRequest;
+      signal: AbortSignal;
+    },
+    executionId: string,
+    lease: ExecutionLease,
+    state: EphemeralExecutionState,
+    stream: ControllerStream,
+  ): Promise<void> {
+    // Resolve execution context
+    let executionProfile: ExecutionProfileOutcome;
+    let workspace: WorkspaceRuntime | undefined;
+    let prompt: PromptEnvelope;
+    let adapter: BackendAdapter;
+
+    try {
+      executionProfile = resolveExecutionProfile(input.request);
+      const a = this.adapters.get(input.request.backend);
+      if (!a) throw new RequestResolutionError(`No adapter for backend ${input.request.backend}`, "unknown_backend", 500);
+      adapter = a;
+      workspace = await this.workspaceManager.prepare({
+        request: input.request,
+        runtimeHandle: executionId,
+      });
+      prompt = await buildExecutionPrompt({ request: input.request });
+    } catch (err) {
+      const msg = err instanceof RequestResolutionError ? err.message : String(err);
+      await stream.emitRuntime("system.error", {
+        code: err instanceof RequestResolutionError ? err.code : "internal",
+        message: msg,
+      });
+      await stream.emitRuntime("execution.failed", {
+        execution_id: executionId,
+        status: "failed",
+        message: msg,
+      });
+      if (workspace) {
+        await this.cleanupWorkspace(workspace);
+      }
+      return;
+    }
+
+    // Start IPC server for bomcp-server
+    const socketPath = path.join(this.dataDir, "ipc", `${executionId}.sock`);
+    const ipcServer = createIpcServer(socketPath);
+    const abortController = new AbortController();
+    const toolHandler = new BomcpToolHandler(
+      stream,
+      state,
+      abortController.signal,
+      workspace.runtime_working_directory
+    );
+
+    await ipcServer.start((req) => toolHandler.handle(req));
+
+    // Register active execution
+    const active: ActiveExecution = {
+      state,
+      abortController,
+      stream,
+      ipcServer,
+    };
+    this.activeExecutions.set(executionId, active);
+
+    // Abort on caller disconnect
+    const onControllerAbort = () => abortController.abort("controller_disconnected");
+    input.signal.addEventListener("abort", onControllerAbort, { once: true });
+
+    // Emit execution.started
+    state.status = "running";
+    const started = await stream.emitRuntime("execution.started", {
+      backend: input.request.backend,
+      execution_id: executionId,
+    });
+    if (!started.delivered) {
+      reportInternalError("execution.started.dropped", new Error("execution.started was not delivered"), {
+        execution_id: executionId,
+      });
+    }
+
+    // Start heartbeat
+    active.heartbeatTimer = setInterval(() => {
+      stream.emitRuntime("progress.heartbeat", {}).catch((err) => {
+        reportInternalError("execution.heartbeat.emit", err, { execution_id: executionId });
+      });
+    }, HEARTBEAT_INTERVAL_MS);
+
+    // Lease expiry timer
+    let leaseTimer: ReturnType<typeof setTimeout> | undefined;
+    if (lease.timeout_seconds) {
+      leaseTimer = setTimeout(() => {
+        stream.emitRuntime("system.lease_expired", { execution_id: executionId })
+          .then(({ delivered }) => {
+            if (!delivered) {
+              reportInternalError("execution.lease_expired.dropped", new Error("system.lease_expired was not delivered"), {
+                execution_id: executionId,
+              });
+            }
+          })
+          .catch((err) => {
+            reportInternalError("execution.lease_expired.emit", err, { execution_id: executionId });
+          });
+        state.status = "cancelled";
+        abortController.abort("lease_expired");
+      }, lease.timeout_seconds * 1000);
+    }
+
+    // Collect provider events
+    let providerResult: ProviderResult;
+    try {
+      // Build bomcp-server config for adapter injection
+      const bomcpServerConfig = lease.allowed_tools.length > 0 ? {
+        command: process.execPath,
+        args: [new URL("../bomcp/server.ts", import.meta.url).pathname],
+        env: {
+          BO_MCP_EXECUTION_ID: executionId,
+          BO_MCP_IPC_ADDRESS: socketPath,
+        },
+      } : undefined;
+
+      providerResult = await collectProviderResult({
+        adapter,
+        executionId,
+        requestId: input.requestId,
+        request: input.request,
+        executionProfile,
+        workspace,
+        prompt,
+        signal: abortController.signal,
+        abortController,
+        stream,
+        state,
+        bomcpServerConfig,
+      });
+    } catch (err) {
+      providerResult = {
+        failure: {
+          message: String(err),
+          retryable: false,
+        },
+      };
+    } finally {
+      input.signal.removeEventListener("abort", onControllerAbort);
+      if (leaseTimer) clearTimeout(leaseTimer);
+    }
+
+    // Check if cancelled via abort
+    if (abortController.signal.aborted) {
+      const reason = abortController.signal.reason ?? "cancelled";
+      state.status = "cancelled";
+      const cancelled = await stream.emitRuntime("execution.cancelled", {
+        execution_id: executionId,
+        reason: String(reason),
+      });
+      if (!cancelled.delivered) {
+        reportInternalError("execution.cancelled.dropped", new Error("execution.cancelled was not delivered"), {
+          execution_id: executionId,
+          reason: String(reason),
+        });
+      }
+      await this.cleanupWorkspace(workspace);
+      return;
+    }
+
+    // Finalize
+    await finalizeExecution({
+      stream,
+      workspaceManager: this.workspaceManager,
+      state,
+      workspace,
+      request: input.request,
+      providerResult,
+    });
+  }
+
+  async cancelExecution(
+    executionId: string,
+    reason: string = "cancel_request",
+  ): Promise<"accepted" | "not_found"> {
+    const active = this.activeExecutions.get(executionId);
+    if (!active) return "not_found";
+    active.state.status = "cancelled";
+    active.abortController.abort(reason);
+    return "accepted";
+  }
+
+  getActiveExecution(executionId: string): EphemeralExecutionState | undefined {
+    return this.activeExecutions.get(executionId)?.state;
+  }
+
   async shutdown(): Promise<void> {
-    for (const controller of this.activeExecutionControllers.values()) {
-      controller.abort();
+    for (const [id, active] of this.activeExecutions) {
+      active.abortController.abort("gateway_shutdown");
     }
     await this.admission.drain();
   }
 
-  async cancelExecution(executionId: string): Promise<"accepted" | "not_found" | "already_terminal" | "not_cancellable"> {
-    const controller = this.activeExecutionControllers.get(executionId);
-    if (controller) {
-      controller.abort();
-      return "accepted";
-    }
-    const execution = await this.repository.getExecution(executionId);
-    if (!execution) {
-      return "not_found";
-    }
-    if (execution.execution.completed_at || isTerminalStatus(execution.execution.status)) {
-      return "already_terminal";
-    }
-    return "not_cancellable";
-  }
+  // --- Internal ---
 
-  private async resolveExecutionContext(
-    input: ExecutionRunContext
-  ): Promise<
-    | { ok: true; value: ResolvedExecutionContext }
-    | { ok: false; httpStatus: number; response: ExecutionResponse }
-  > {
+  private async teardown(executionId: string): Promise<void> {
+    const active = this.activeExecutions.get(executionId);
+    if (!active) return;
+    if (active.heartbeatTimer) clearInterval(active.heartbeatTimer);
     try {
-      const executionProfile = await resolveExecutionProfile({ request: input.request, profilesFile: this.profilesFile });
-      const session = await this.sessionManager.resolve({
-        request: input.request,
-        backend: input.request.backend,
-        sourceRoot: input.request.workspace.source_root
-      });
-      const workspace = await this.workspaceManager.prepare({
-        request: input.request,
-        runtimeHandle: session.internal_handle
-      });
-      const prompt = await buildExecutionPrompt({
-        request: input.request,
-        managedContext: session.continuation_capsule
-      });
-      const adapter = this.adapters.get(input.request.backend);
-      if (!adapter) {
-        throw new RequestResolutionError(`No backend adapter registered for ${input.request.backend}`, "unknown_backend", 500);
-      }
-      return {
-        ok: true,
-        value: {
-          ...input,
-          executionProfile,
-          session,
-          workspace,
-          adapter,
-          prompt
-        }
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        httpStatus: error instanceof RequestResolutionError ? error.httpStatus : 500,
-        response: await this.buildRejectionResponse(
-          input,
-          formatExecutionError(error),
-          "Execution rejected during request resolution."
-        )
-      };
+      await active.ipcServer.stop();
+    } catch (err) {
+      reportInternalError("execution.teardown.ipc_stop", err, { execution_id: executionId });
     }
+    active.stream.close();
+    this.activeExecutions.delete(executionId);
   }
 
-  private async executeResolved(
-    context: ResolvedExecutionContext
-  ): Promise<{ httpStatus: number; response: ExecutionResponse; events: ReturnType<EventLog["list"]> }> {
-    const startedAt = nowIso();
-    const runningRecord: ExecutionRecord = {
-      execution_id: context.executionId,
-      request_id: context.requestId,
-      session_handle: context.session.record ? context.session.internal_handle : null,
-      backend: context.request.backend,
-      status: "running",
-      degraded: false,
-      retryable: false,
-      started_at: startedAt,
-      updated_at: startedAt,
-      request_snapshot: context.request,
-      execution_profile: context.executionProfile
-    };
-
-    const abortController = new AbortController();
-    const provider = createProviderAccumulation(context.session);
-    this.activeExecutionControllers.set(context.executionId, abortController);
+  private async cleanupWorkspace(workspace: WorkspaceRuntime): Promise<void> {
     try {
-      await this.repository.initializeExecution({
-        session_record: context.session.persist_on_initialize ? context.session.record : undefined,
-        execution_record: runningRecord,
-        capability_outcomes: context.guaranteeResolution.outcomes,
-        workspace_record: buildWorkspaceRecord(context.executionId, context.session, context.workspace)
-      });
-      await this.recordExecutionStart(context);
-      await collectProviderResult({
-        adapter: context.adapter,
-        repository: this.repository,
-        executionId: context.executionId,
-        requestId: context.requestId,
-        request: context.request,
-        executionProfile: context.executionProfile,
-        session: context.session,
-        workspace: context.workspace,
-        prompt: context.prompt,
-        signal: abortController.signal,
-        log: context.log,
-        accumulation: provider
-      });
-      const finalized = await finalizeResolvedExecution({
-        repository: this.repository,
-        workspaceManager: this.workspaceManager,
-        context,
-        runningRecord,
-        startedAt,
-        provider
-      });
-      return {
-        httpStatus: finalized.httpStatus,
-        response: finalized.response,
-        events: context.log.list()
-      };
-    } catch (error) {
-      const failed = await finalizeRuntimeFailure({
-        repository: this.repository,
-        workspaceManager: this.workspaceManager,
-        context,
-        runningRecord,
-        startedAt,
-        error,
-        provider
-      });
-      return {
-        httpStatus: failed.httpStatus,
-        response: failed.response,
-        events: context.log.list()
-      };
-    } finally {
-      this.activeExecutionControllers.delete(context.executionId);
-    }
+      await this.workspaceManager.cleanup(workspace);
+    } catch { /* best-effort */ }
   }
+}
 
-  private async emitImmediateRejection(
-    context: ExecutionRunContext,
-    input: {
-      httpStatus: number;
-      error: ExecutionError;
-    }
-  ): Promise<{ httpStatus: number; response: ExecutionResponse; events: ReturnType<EventLog["list"]> }> {
-    const response = await this.buildRejectionResponse(context, input.error);
-    const immediate = await emitImmediateExecutionResponse({
-      repository: this.repository,
-      sessionlessExecutionRetentionMs: this.sessionlessExecutionRetentionMs,
-      context,
-      httpStatus: input.httpStatus,
-      response,
-      terminalEvent: "execution.rejected"
-    });
-    return {
-      httpStatus: immediate.httpStatus,
-      response: immediate.response,
-      events: context.log.list()
-    };
-  }
-
-  private async recordExecutionStart(context: ResolvedExecutionContext): Promise<void> {
-    await recordExecutionEvent({
-      repository: this.repository,
-      log: context.log,
-      executionId: context.executionId,
-      event: "execution.accepted",
-      data: { backend: context.request.backend }
-    });
-    await recordExecutionEvent({
-      repository: this.repository,
-      log: context.log,
-      executionId: context.executionId,
-      event: "execution.started",
-      data: {
-        backend: context.request.backend,
-        session_handle: context.session.public_handle
-      }
-    });
-    await recordExecutionEvent({
-      repository: this.repository,
-      log: context.log,
-      executionId: context.executionId,
-      event: "execution.progress_initialized",
-      data: {
-        topology: context.workspace.topology
-      }
-    });
-  }
-
-  private async buildRejectionResponse(
-    context: ExecutionRunContext,
-    error: ExecutionError,
-    summary = "Execution rejected before backend dispatch."
-  ): Promise<ExecutionResponse> {
-    return {
-      api_version: "v0.1",
-      request_id: context.requestId,
-      execution: buildRejectedExecutionSummary(context.executionId, nowIso()),
-      persistence: buildPersistenceSummary("not_attempted"),
-      execution_profile: await resolveExecutionProfileSafe(context.request, this.profilesFile),
-      session: {
-        handle: context.request.session.handle,
-        continuity_kind: "none",
-        durability_kind: context.request.session.mode === "ephemeral" ? "ephemeral" : "persistent"
-      },
-      workspace: buildRejectedWorkspaceSummary(context.request),
-      capabilities: context.guaranteeResolution.outcomes,
-      result: {
-        summary,
-        payload: {},
-        pending_items: []
-      },
-      artifacts: [],
-      control_gates: { pending: [], resolved: [] },
-      errors: [error],
-      debug: {
-        capability_diagnostics: context.guaranteeResolution.diagnostics
-      }
-    };
-  }
+function resolveExecutionProfile(request: NormalizedExecutionRequest): ExecutionProfileOutcome {
+  return {
+    model: request.execution_profile.model,
+    reasoning_effort: request.execution_profile.reasoning_effort,
+  };
 }

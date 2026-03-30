@@ -1,78 +1,74 @@
-import type { BackendAdapter } from "../adapters/types.ts";
-import type { ResolvedExecutionProfile, NormalizedExecutionRequest } from "../types.ts";
-import type { BoStaffRepository } from "../persistence/types.ts";
-import type { SessionResolution } from "./session-manager.ts";
+import type { BackendAdapter, ProviderTerminalResult, ProviderFailure } from "../adapters/types.ts";
+import type { ExecutionProfileOutcome, NormalizedExecutionRequest } from "../types.ts";
 import type { WorkspaceRuntime } from "./workspace-manager.ts";
-import type { ProviderAccumulation } from "./execution-state.ts";
+import type { PromptEnvelope } from "./prompt-envelope.ts";
+import type { ControllerStream } from "../bomcp/controller-stream.ts";
+import type { EphemeralExecutionState } from "../bomcp/types.ts";
 import { projectAdapterEvent } from "./event-projection.ts";
-import { EventLog } from "./event-log.ts";
+
+export interface ProviderResult {
+  terminal?: ProviderTerminalResult;
+  failure?: ProviderFailure;
+}
 
 export async function collectProviderResult(input: {
   adapter: BackendAdapter;
-  repository: BoStaffRepository;
   executionId: string;
   requestId: string;
   request: NormalizedExecutionRequest;
-  executionProfile: ResolvedExecutionProfile;
-  session: SessionResolution;
+  executionProfile: ExecutionProfileOutcome;
   workspace: WorkspaceRuntime;
-  prompt: string;
+  prompt: PromptEnvelope;
   signal: AbortSignal;
-  log: EventLog;
-  accumulation: ProviderAccumulation;
-}): Promise<void> {
+  abortController: AbortController;
+  stream: ControllerStream;
+  state: EphemeralExecutionState;
+  bomcpServerConfig?: { command: string; args: string[]; env: Record<string, string> };
+}): Promise<ProviderResult> {
+  const result: ProviderResult = {};
+  let turnCount = 0;
+
   for await (const event of input.adapter.execute({
     request_id: input.requestId,
     execution_id: input.executionId,
     signal: input.signal,
     request: input.request,
     execution_profile: input.executionProfile,
-    session: input.session,
+    continuation: input.request.continuation,
     workspace: input.workspace,
-    prompt: input.prompt
+    prompt: input.prompt,
+    bomcp_server_config: input.bomcpServerConfig,
   })) {
+    if (event.type === "provider.started") {
+      input.state.agent_id = event.provider_session_id ?? input.state.agent_id;
+    }
+
     await projectAdapterEvent({
-      repository: input.repository,
-      executionId: input.executionId,
-      log: input.log,
+      stream: input.stream,
       event,
-      artifactMap: input.accumulation.artifactMap,
-      controlGateMap: input.accumulation.controlGateMap
+      agentId: input.state.agent_id ?? "agent",
     });
+
     switch (event.type) {
-      case "provider.started":
-        input.accumulation.providerSessionId = event.provider_session_id ?? input.accumulation.providerSessionId;
-        break;
-      case "provider.progress":
-        if (event.usage) {
-          input.accumulation.providerUsage = { ...input.accumulation.providerUsage, ...event.usage };
+      case "provider.turn_boundary":
+        turnCount = event.turn_number;
+        if (input.request.runtime.max_turns !== undefined && turnCount > input.request.runtime.max_turns) {
+          input.abortController.abort("turn_limit_exceeded");
         }
         break;
-      case "provider.debug":
-        input.accumulation.providerDebug = { ...(input.accumulation.providerDebug ?? {}), ...event.debug };
-        break;
+
       case "provider.completed":
-        input.accumulation.providerSessionId = event.result.provider_session_id ?? input.accumulation.providerSessionId;
-        input.accumulation.providerUsage = event.result.usage ?? input.accumulation.providerUsage;
-        input.accumulation.rawOutputText = event.result.raw_output_text ?? input.accumulation.rawOutputText;
-        input.accumulation.providerDebug = {
-          ...(input.accumulation.providerDebug ?? {}),
-          ...(event.result.debug ?? {})
-        };
+        result.terminal = event.result;
         break;
+
       case "provider.failed":
-        input.accumulation.providerFailed = {
-          code: event.error.kind ?? "provider_failed",
-          message: event.error.message,
-          retryable: event.error.retryable
-        };
-        input.accumulation.providerDebug = {
-          ...(input.accumulation.providerDebug ?? {}),
-          ...(event.error.debug ?? {})
-        };
+        result.failure = event.error;
         break;
+
       default:
         break;
     }
   }
+
+  return result;
 }

@@ -252,16 +252,16 @@ export async function runCommand(input: {
     return { stdout: "", stderr: "", exitCode: 1 };
   }
   if (terminal.reason === "timed_out") {
-    throw new UpstreamRuntimeError(`Command timed out after ${input.timeoutMs}ms: ${input.command}`);
+    throw new UpstreamRuntimeError(`Command timed out after ${input.timeoutMs}ms: ${input.command}`, 502, "provider_timeout");
   }
   if (terminal.reason === "aborted") {
-    throw new UpstreamRuntimeError(`Command aborted: ${input.command}`);
+    throw new UpstreamRuntimeError(`Command aborted: ${input.command}`, 502, "provider_process_aborted");
   }
   if (terminal.reason === "stdout_overflow") {
-    throw new UpstreamRuntimeError(`Command stdout exceeded ${input.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES} bytes: ${input.command}`);
+    throw new UpstreamRuntimeError(`Command stdout exceeded ${input.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES} bytes: ${input.command}`, 502, "provider_output_overflow");
   }
   if (terminal.reason === "stderr_overflow") {
-    throw new UpstreamRuntimeError(`Command stderr exceeded ${input.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES} bytes: ${input.command}`);
+    throw new UpstreamRuntimeError(`Command stderr exceeded ${input.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES} bytes: ${input.command}`, 502, "provider_output_overflow");
   }
 
   return {

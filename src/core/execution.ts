@@ -1,18 +1,18 @@
-export const EXECUTION_STATUSES = [
+// Re-export the canonical ExecutionStatus from bomcp/types.ts
+export type { ExecutionStatus } from "../bomcp/types.ts";
+
+import type { ExecutionStatus } from "../bomcp/types.ts";
+
+export const EXECUTION_STATUSES: readonly ExecutionStatus[] = [
   "accepted",
   "running",
   "completed",
-  "partial",
-  "awaiting_control_gate",
   "failed",
-  "rejected"
+  "cancelled"
 ] as const;
 
-export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
-
 export function isTerminalStatus(status: ExecutionStatus): boolean {
-  return status === "rejected"
+  return status === "completed"
     || status === "failed"
-    || status === "completed"
-    || status === "partial";
+    || status === "cancelled";
 }

@@ -2,11 +2,11 @@ import path from "node:path";
 import type { IntegrationContext } from "../fixtures.ts";
 import { pauseStep } from "../fixtures.ts";
 import {
-  assertArtifactKinds,
   assertEq,
-  assertNoErrors,
+  assertNoPayloadErrors,
   executeRequest,
-  getPayloadRecord
+  getAgentOutput,
+  requireTerminalEnvelope,
 } from "../assertions.ts";
 import { buildRequest, type IntegrationAgent } from "./common.ts";
 
@@ -18,7 +18,7 @@ export async function runAttachmentScenario(
   expectedFile: string,
   prefix: string
 ) {
-  const response = await executeRequest({
+  const result = await executeRequest({
     context,
     name: prefix,
     request: buildRequest(
@@ -29,26 +29,27 @@ export async function runAttachmentScenario(
         "The inline attachment contains one token and the file attachment contains another token.",
         "Return content as the exact concatenation of the actual attachment contents in the form inline_token|file_token.",
         "Do not return placeholder text such as <inline> or <file>.",
-        "Set artifact_label to exactly 'attachment-proof'."
+        "Set artifact_label to exactly 'attachment-proof'.",
       ].join(" "),
       {
         task: {
-          objective: "Demonstrate that bo_staff attachment material is available to the agent.",
+          objective:
+            "Demonstrate that bo_staff attachment material is available to the agent.",
           constraints: [
             "Do not use tools.",
             "Use only the attachment material.",
-            "The content field must be the literal attachment values joined by a single pipe."
+            "The content field must be the literal attachment values joined by a single pipe.",
           ],
           attachments: [
             {
               name: "inline-note.txt",
-              content: expectedInline
+              content: expectedInline,
             },
             {
               name: "file-note.txt",
-              path: path.join(sourceRoot, "brief.txt")
-            }
-          ]
+              path: path.join(sourceRoot, "brief.txt"),
+            },
+          ],
         },
         output: {
           format: "custom",
@@ -58,19 +59,20 @@ export async function runAttachmentScenario(
             additionalProperties: false,
             properties: {
               content: { type: "string" },
-              artifact_label: { type: "string" }
-            }
-          }
-        }
+              artifact_label: { type: "string" },
+            },
+          },
+        },
       }
     ),
     expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
+    expectedTerminalKind: "execution.completed",
   });
-  const payload = getPayloadRecord(response.json);
+  const terminal = requireTerminalEnvelope(result.envelopes, `${backend} attachments`);
+  const payload = getAgentOutput(terminal);
   assertEq(payload.content, `${expectedInline}|${expectedFile}`, `${backend} attachment payload`);
   assertEq(payload.artifact_label, "attachment-proof", `${backend} attachment artifact_label`);
-  assertNoErrors(response.json, `${backend} attachments`);
+  assertNoPayloadErrors(terminal, `${backend} attachments`);
   await pauseStep(context);
 }
 
@@ -80,21 +82,21 @@ export async function runPlanningScenario(
   sourceRoot: string,
   prefix: string
 ) {
-  const response = await executeRequest({
+  const result = await executeRequest({
     context,
     name: prefix,
     request: buildRequest(
       backend,
       sourceRoot,
-      "Create a compact implementation plan. Return exactly three ordered steps, a final decision='feasible', and include one artifact record of kind 'plan'.",
+      "Create a compact implementation plan. Return exactly three ordered steps and a final decision='feasible'.",
       {
         task: {
           objective: "Plan a safe implementation sequence.",
           constraints: [
             "Exactly three steps.",
             "Keep each step short.",
-            "Do not use tools."
-          ]
+            "Do not use tools.",
+          ],
         },
         output: {
           format: "custom",
@@ -105,24 +107,27 @@ export async function runPlanningScenario(
             properties: {
               steps: {
                 type: "array",
-                items: { type: "string" }
+                items: { type: "string" },
               },
-              decision: { type: "string" }
-            }
-          }
-        }
+              decision: { type: "string" },
+            },
+          },
+        },
       }
     ),
     expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
+    expectedTerminalKind: "execution.completed",
   });
-  const payload = getPayloadRecord(response.json);
+  const terminal = requireTerminalEnvelope(result.envelopes, `${backend} planning`);
+  const payload = getAgentOutput(terminal);
   const steps = Array.isArray(payload.steps) ? payload.steps : [];
-  if (steps.length !== 3 || !steps.every((step) => typeof step === "string" && step.trim().length > 0)) {
+  if (
+    steps.length !== 3 ||
+    !steps.every((step) => typeof step === "string" && step.trim().length > 0)
+  ) {
     throw new Error(`${backend} planning scenario: expected exactly three non-empty steps`);
   }
   assertEq(payload.decision, "feasible", `${backend} planning decision`);
-  assertArtifactKinds(response.json, ["plan"], `${backend} planning artifacts`);
-  assertNoErrors(response.json, `${backend} planning`);
+  assertNoPayloadErrors(terminal, `${backend} planning`);
   await pauseStep(context);
 }

@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "bo": "./bin/bo.mjs",
+    "bo.claude": "./bin/bo.claude.mjs",
+    "bo.codex": "./bin/bo.codex.mjs"
+  },
   "scripts": {
     "start": "node src/server.ts",
     "test": "node --test test/contract/*.test.ts",
     "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm test",
     "test:integration": "bash scripts/run-integration.sh",
     "cli": "node src/cli.ts"
   },

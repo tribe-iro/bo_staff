@@ -6,6 +6,8 @@ import {
   readJsonBody,
   writeRejectedStream
 } from "../../src/http/handlers/executions.ts";
+import { handleRun } from "../../src/http/handlers/run.ts";
+import { buildSyncResult } from "../../src/api/sync-response.ts";
 import { routeHttp } from "../../src/http/router.ts";
 
 class MockResponse extends EventEmitter {
@@ -43,26 +45,13 @@ class MockResponse extends EventEmitter {
   }
 }
 
-test("stream rejection stays parseable as NDJSON", async () => {
+test("stream handler converts post-header execution throws into NDJSON failure events", async () => {
   const response = new MockResponse();
   await handleExecuteStream(
     response as never,
     {
-      async execute(_: unknown, __: string, options?: { onEvent?: (event: unknown) => void }) {
-        await options?.onEvent?.({
-          event: "execution.rejected",
-          request_id: "req_1",
-          execution_id: "exec_1",
-          emitted_at: new Date().toISOString(),
-          data: {
-            reason: "validation"
-          }
-        });
-        return {
-          httpStatus: 400,
-          body: {} as never,
-          events: []
-        };
+      async execute() {
+        throw new Error("boom after stream start");
       }
     } as never,
     {},
@@ -70,11 +59,13 @@ test("stream rejection stays parseable as NDJSON", async () => {
   );
 
   assert.equal(response.statusCode, 200);
-  const events = response.text().trim().split("\n").map((line) => JSON.parse(line));
-  assert.equal(events[0].event, "execution.rejected");
+  const lines = response.text().trim().split("\n").map((line) => JSON.parse(line));
+  const errorEvent = lines.find((e: { kind?: string }) => e.kind === "system.error");
+  assert.ok(errorEvent, "should emit system.error event");
+  assert.match(errorEvent.payload.message, /boom after stream start/);
 });
 
-test("GET endpoint failures are contained as structured server errors", async () => {
+test("GET /health failures are contained as structured server errors", async () => {
   const response = new MockResponse();
   const handled = await routeHttp({
     request: { method: "GET", url: "/health" } as never,
@@ -94,58 +85,21 @@ test("GET endpoint failures are contained as structured server errors", async ()
   assert.match(body.error.message, /boom/);
 });
 
-test("execution lookup endpoints are routed", async () => {
+test("GET /executions/:id returns live execution state", async () => {
   const response = new MockResponse();
   const handled = await routeHttp({
     request: { method: "GET", url: "/executions/exec_1" } as never,
     response: response as never,
     gateway: {
-      async getExecution() {
+      getActiveExecution() {
         return {
-          api_version: "v0.1",
-          request_id: "req_1",
-          execution: {
-            execution_id: "exec_1",
-            status: "completed",
-            terminal: true,
-            degraded: false,
-            retryable: false,
-            started_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          persistence: {
-            status: "persisted"
-          },
-          execution_profile: {
-            requested_performance_tier: "balanced",
-            requested_reasoning_tier: "standard",
-            selection_mode: "managed",
-            resolved_backend_model: "gpt-5",
-            resolution_source: "managed"
-          },
-          session: {
-            handle: null,
-            continuity_kind: "none",
-            durability_kind: "ephemeral"
-          },
-          workspace: {
-            topology: "direct",
-            scope_status: "unbounded",
-            writeback_status: "not_requested",
-            materialization_status: "not_requested"
-          },
-          capabilities: {} as never,
-          result: {
-            summary: "ok",
-            payload: {},
-            pending_items: []
-          },
-          artifacts: [],
-          control_gates: {
-            pending: [],
-            resolved: []
-          },
-          errors: []
+          execution_id: "exec_1",
+          status: "running",
+          backend: "claude",
+          started_at: new Date().toISOString(),
+          artifacts: new Map(),
+          processed_request_ids: new Map(),
+          lease: { execution_id: "exec_1", allowed_tools: [], issued_at: new Date().toISOString() },
         };
       }
     } as never,
@@ -154,78 +108,37 @@ test("execution lookup endpoints are routed", async () => {
 
   assert.equal(handled, true);
   assert.equal(response.statusCode, 200);
-  const body = JSON.parse(response.text()) as { execution: { execution: { execution_id: string } } };
-  assert.equal(body.execution.execution.execution_id, "exec_1");
+  const body = JSON.parse(response.text()) as { execution_id: string; status: string };
+  assert.equal(body.execution_id, "exec_1");
+  assert.equal(body.status, "running");
 });
 
-test("pre-dispatch stream rejection does not fabricate an execution handle", async () => {
+test("GET /executions/:id returns 404 for inactive execution", async () => {
+  const response = new MockResponse();
+  const handled = await routeHttp({
+    request: { method: "GET", url: "/executions/exec_missing" } as never,
+    response: response as never,
+    gateway: {
+      getActiveExecution() { return undefined; }
+    } as never,
+    maxBodyBytes: 1024
+  });
+
+  assert.equal(handled, true);
+  assert.equal(response.statusCode, 404);
+});
+
+test("pre-dispatch stream rejection emits system.error", async () => {
   const response = new MockResponse();
   await writeRejectedStream(response as never, "req_1", {
     code: "invalid_json",
     message: "bad body",
-    httpStatus: 400
   });
 
   assert.equal(response.statusCode, 200);
-  const [event] = response.text().trim().split("\n").map((line) => JSON.parse(line) as {
-    execution_id: string | null;
-    data: { http_status: number };
-  });
-  assert.equal(event.execution_id, null);
-  assert.equal(event.data.http_status, 400);
-});
-
-test("stream handler converts post-header execution throws into NDJSON failure events", async () => {
-  const response = new MockResponse();
-  await handleExecuteStream(
-    response as never,
-    {
-      async execute() {
-        throw new Error("boom after stream start");
-      }
-    } as never,
-    {},
-    "req_1"
-  );
-
-  assert.equal(response.statusCode, 200);
-  const [event] = response.text().trim().split("\n").map((line) => JSON.parse(line) as {
-    event: string;
-    data: { code: string; message: string };
-  });
-  assert.equal(event.event, "execution.failed");
-  assert.equal(event.data.code, "runtime_error");
-  assert.match(event.data.message, /boom after stream start/);
-});
-
-test("stream disconnect cancels an execution created before the first event", async () => {
-  const response = new MockResponse();
-  let cancelledExecutionId: string | undefined;
-  await handleExecuteStream(
-    response as never,
-    {
-      async execute(_: unknown, __: string, options?: {
-        onExecutionCreated?: (executionId: string) => Promise<void> | void;
-        onEvent?: (event: unknown) => Promise<void> | void;
-      }) {
-        await options?.onExecutionCreated?.("exec_1");
-        response.emit("close");
-        return {
-          httpStatus: 200,
-          body: {} as never,
-          events: []
-        };
-      },
-      async cancelExecution(executionId: string) {
-        cancelledExecutionId = executionId;
-        return "accepted" as const;
-      }
-    } as never,
-    {},
-    "req_1"
-  );
-
-  assert.equal(cancelledExecutionId, "exec_1");
+  const lines = response.text().trim().split("\n").map((line) => JSON.parse(line));
+  assert.equal(lines[0].kind, "system.error");
+  assert.equal(lines[0].payload.code, "invalid_json");
 });
 
 test("cancel execution endpoint is routed", async () => {
@@ -248,6 +161,64 @@ test("cancel execution endpoint is routed", async () => {
   assert.equal(body.execution_id, "exec_1");
 });
 
+test("removed operator endpoints are not routed", async () => {
+  const response = new MockResponse();
+  for (const endpoint of [
+    "/executions/exec_1/resume",
+    "/executions/exec_1/input",
+    "/executions/exec_1/approve",
+    "/executions/exec_1/deny",
+  ]) {
+    const handled = await routeHttp({
+      request: { method: "POST", url: endpoint } as never,
+      response: response as never,
+      gateway: {} as never,
+      maxBodyBytes: 1024,
+    });
+    assert.equal(handled, false);
+  }
+});
+
+test("handleRun reuses the pre-normalized request instead of calling gateway.execute(raw)", async () => {
+  const response = new MockResponse();
+  let executeNormalizedCalled = false;
+
+  await handleRun(
+    response as never,
+    {
+      async execute() {
+        throw new Error("handleRun should not call gateway.execute after pre-normalizing");
+      },
+      async executeNormalized(input: {
+        request: unknown;
+        lease?: unknown;
+        streamWriter: (envelope: unknown) => Promise<void>;
+      }) {
+        executeNormalizedCalled = true;
+        await input.streamWriter({
+          execution_id: "exec_1",
+          message_id: "msg_1",
+          kind: "execution.completed",
+          sequence: 1,
+          timestamp: new Date().toISOString(),
+          sender: { type: "runtime", id: "runtime" },
+          payload: {
+            execution_id: "exec_1",
+            status: "completed",
+            output: JSON.stringify({ payload: { content: "ok" }, artifacts: [] }),
+            artifacts: [],
+          },
+        });
+      }
+    } as never,
+    { prompt: "fix the tests" },
+    "req_1"
+  );
+
+  assert.equal(executeNormalizedCalled, true);
+  assert.equal(response.statusCode, 200);
+});
+
 test("readJsonBody rejects non-json content types", async () => {
   await assert.rejects(
     () => readJsonBody({
@@ -263,17 +234,45 @@ test("readJsonBody rejects non-json content types", async () => {
   );
 });
 
-test("router rejects invalid session handles on path endpoints", async () => {
+test("unknown routes return false", async () => {
   const response = new MockResponse();
   const handled = await routeHttp({
-    request: { method: "DELETE", url: "/sessions/%2Fescape" } as never,
+    request: { method: "DELETE", url: "/sessions/foo" } as never,
     response: response as never,
     gateway: {} as never,
     maxBodyBytes: 1024
   });
 
-  assert.equal(handled, true);
-  assert.equal(response.statusCode, 400);
-  const body = JSON.parse(response.text()) as { error: { code: string } };
-  assert.equal(body.error.code, "invalid_session_handle");
+  assert.equal(handled, false);
+});
+
+test("buildSyncResult deduplicates artifacts emitted during execution and completion", () => {
+  const result = buildSyncResult([
+    {
+      execution_id: "exec_1",
+      message_id: "msg_1",
+      kind: "artifact.registered",
+      sequence: 1,
+      timestamp: new Date().toISOString(),
+      sender: { type: "runtime", id: "runtime" },
+      payload: { kind: "report", path: "out.txt" },
+    },
+    {
+      execution_id: "exec_1",
+      message_id: "msg_2",
+      kind: "execution.completed",
+      sequence: 2,
+      timestamp: new Date().toISOString(),
+      sender: { type: "runtime", id: "runtime" },
+      payload: {
+        execution_id: "exec_1",
+        status: "completed",
+        output: JSON.stringify({ payload: { content: "ok" } }),
+        artifacts: [{ kind: "report", path: "out.txt" }],
+      },
+    },
+  ] as never);
+
+  assert.equal(result.artifacts.length, 1);
+  assert.deepEqual(result.artifacts[0], { kind: "report", path: "out.txt", metadata: undefined });
 });

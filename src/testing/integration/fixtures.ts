@@ -78,18 +78,12 @@ export async function prepareProjects(context: IntegrationContext): Promise<void
   const projectNames = [
     "codex-read",
     "codex-write",
-    "codex-isolated",
-    "codex-discard",
-    "codex-cleanup",
     "codex-session",
     "codex-task",
     "claude-read",
     "claude-write",
-    "claude-isolated",
-    "claude-discard",
     "claude-session",
-    "claude-task",
-    "non-git-isolated"
+    "claude-task"
   ];
   for (const name of projectNames) {
     await mkdir(path.join(context.projectsDir, name), { recursive: true });
@@ -98,26 +92,14 @@ export async function prepareProjects(context: IntegrationContext): Promise<void
   await writeFile(path.join(context.projectsDir, "codex-read", "workspace.txt"), "project-codex-read-visible-text\n", "utf8");
   await writeFile(path.join(context.projectsDir, "codex-read", "AGENTS.md"), "Instruction marker placeholder.\n", "utf8");
   await writeFile(path.join(context.projectsDir, "codex-write", "workspace.txt"), "project-codex-write-visible-text\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "codex-isolated", "tracked.txt"), "tracked-codex-before\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "codex-discard", "tracked.txt"), "tracked-codex-discard-before\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "codex-cleanup", "tracked.txt"), "tracked-codex-cleanup\n", "utf8");
   await writeFile(path.join(context.projectsDir, "codex-session", "workspace.txt"), "project-codex-session-visible-text\n", "utf8");
   await writeFile(path.join(context.projectsDir, "codex-task", "brief.txt"), "file-brief-codex\n", "utf8");
 
   await writeFile(path.join(context.projectsDir, "claude-read", "workspace.txt"), "project-claude-read-visible-text\n", "utf8");
   await writeFile(path.join(context.projectsDir, "claude-read", "CLAUDE.md"), "Instruction marker placeholder.\n", "utf8");
   await writeFile(path.join(context.projectsDir, "claude-write", "workspace.txt"), "project-claude-write-visible-text\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "claude-isolated", "tracked.txt"), "tracked-claude-before\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "claude-discard", "tracked.txt"), "tracked-claude-discard-before\n", "utf8");
   await writeFile(path.join(context.projectsDir, "claude-session", "workspace.txt"), "project-claude-session-visible-text\n", "utf8");
   await writeFile(path.join(context.projectsDir, "claude-task", "brief.txt"), "file-brief-claude\n", "utf8");
-  await writeFile(path.join(context.projectsDir, "non-git-isolated", "workspace.txt"), "plain-dir\n", "utf8");
-
-  await initGitRepo(path.join(context.projectsDir, "codex-isolated"));
-  await initGitRepo(path.join(context.projectsDir, "codex-discard"));
-  await initGitRepo(path.join(context.projectsDir, "codex-cleanup"));
-  await initGitRepo(path.join(context.projectsDir, "claude-isolated"));
-  await initGitRepo(path.join(context.projectsDir, "claude-discard"));
   await initGitRepo(path.join(context.projectsDir, "codex-session"));
   await initGitRepo(path.join(context.projectsDir, "claude-session"));
 }

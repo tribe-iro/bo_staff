@@ -5,43 +5,15 @@ import { pauseStep } from "../fixtures.ts";
 import {
   assertContains,
   assertEq,
-  assertNoErrors,
+  assertNoPayloadErrors,
   assertTextAbsentFromGatewaySources,
+  executeRawStream,
   executeRequest,
-  fetchJson,
-  getPayloadRecord,
-  getPayloadContent
+  getAgentOutput,
+  getPayloadContent,
+  requireTerminalEnvelope,
 } from "../assertions.ts";
 import { buildRequest, uniqueMarker, type IntegrationAgent } from "./common.ts";
-
-export async function runInstructionDiscovery(
-  context: IntegrationContext,
-  backend: IntegrationAgent,
-  sourceRoot: string,
-  expectedMarker: string,
-  name: string
-) {
-  await assertTextAbsentFromGatewaySources(context.rootDir, expectedMarker);
-  await writeFile(
-    path.join(sourceRoot, backend === "codex" ? "AGENTS.md" : "CLAUDE.md"),
-    `When asked for the integration marker, set payload.content to ${expectedMarker}.\n`,
-    "utf8"
-  );
-  const { json } = await executeRequest({
-    context,
-    name,
-    request: buildRequest(
-      backend,
-      sourceRoot,
-      "What is the integration marker for this repository? Return it in payload.content."
-    ),
-    expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
-  });
-  assertEq(getPayloadContent(json), expectedMarker, `${backend} instruction marker`);
-  assertNoErrors(json, `${backend} instruction discovery`);
-  await pauseStep(context);
-}
 
 export async function runNativeContinuation(
   context: IntegrationContext,
@@ -56,10 +28,20 @@ export async function runNativeContinuation(
     sourceRoot,
     prefix,
     content: "seeded",
-    token
+    token,
   });
-  const handle = first.json.session.handle;
-  assertNoErrors(first.json, `${backend} native continuation seed`);
+  const firstTerminal = requireTerminalEnvelope(first.envelopes, `${backend} native continuation seed`);
+  assertNoPayloadErrors(firstTerminal, `${backend} native continuation seed`);
+  const firstPayload = getAgentOutput(firstTerminal);
+  const sessionNonce = typeof firstPayload.session_nonce === "string" ? firstPayload.session_nonce : "";
+  if (!sessionNonce.trim()) {
+    throw new Error(`${backend} native continuation seed returned no session_nonce`);
+  }
+  const continuation = extractContinuation(firstTerminal);
+  if (!continuation) {
+    throw new Error(`${backend} native continuation returned no continuation token`);
+  }
+  assertEq(continuation.backend, backend, `${backend} continuation backend`);
   await pauseStep(context);
 
   const second = await executeRequest({
@@ -68,207 +50,87 @@ export async function runNativeContinuation(
     request: buildRequest(
       backend,
       sourceRoot,
-      "Return the remembered token from the previous execution in payload.content.",
+      "Return the remembered token and session nonce from the previous execution in payload.content as remembered_token|session_nonce.",
       {
-        session: {
-          mode: "continue",
-          handle
-        }
+        continuation,
       }
     ),
     expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
+    expectedTerminalKind: "execution.completed",
   });
-  assertEq(second.json.session.handle, handle, `${backend} native continuation handle`);
-  assertEq(second.json.session.continuity_kind, "native", `${backend} native continuation kind`);
-  assertContains(String(getPayloadContent(second.json)), token, `${backend} native continuation token`);
-  if (!handle) {
-    throw new Error(`${backend} native continuation returned no session handle`);
+  const secondTerminal = requireTerminalEnvelope(second.envelopes, `${backend} native continuation`);
+  assertEq(
+    String(getPayloadContent(secondTerminal)),
+    `${token}|${sessionNonce}`,
+    `${backend} native continuation semantic roundtrip`,
+  );
+  const nextContinuation = extractContinuation(secondTerminal);
+  if (!nextContinuation) {
+    throw new Error(`${backend} native continuation returned no continuation token`);
   }
-  await assertSessionApis(context, handle, `${backend} native continuation`);
+  assertEq(nextContinuation.backend, backend, `${backend} continued backend`);
   await pauseStep(context);
 }
 
-export async function runManagedContinuation(
-  context: IntegrationContext,
-  seedBackend: IntegrationAgent,
-  continueBackend: IntegrationAgent,
-  sourceRoot: string,
-  token: string,
-  prefix: string
-) {
-  const first = await executeSeedWithRememberedToken({
-    context,
-    backend: seedBackend,
-    sourceRoot,
-    prefix,
-    content: "managed-seeded",
-    token
-  });
-  await pauseStep(context);
-
-  const second = await executeRequest({
-    context,
-    name: `${prefix}-continue`,
-    request: buildRequest(
-      continueBackend,
-      sourceRoot,
-      "Read the managed continuation capsule and return the remembered token in payload.content.",
-      {
-        session: {
-          mode: "continue",
-          handle: first.json.session.handle
-        }
-      }
-    ),
-    expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
-  });
-  assertEq(second.json.session.handle, first.json.session.handle, `${prefix} managed continuation handle`);
-  assertEq(second.json.session.continuity_kind, "managed", `${prefix} managed continuation kind`);
-  assertContains(String(getPayloadContent(second.json)), token, `${prefix} managed continuation token`);
-  await pauseStep(context);
-}
-
-export async function runForkContinuation(
-  context: IntegrationContext,
-  backend: IntegrationAgent,
-  sourceRoot: string,
-  token: string,
-  prefix: string
-) {
-  const first = await executeSeedWithRememberedToken({
-    context,
-    backend,
-    sourceRoot,
-    prefix,
-    content: "fork-seeded",
-    token
-  });
-  await pauseStep(context);
-
-  const second = await executeRequest({
-    context,
-    name: `${prefix}-fork`,
-    request: buildRequest(
-      backend,
-      sourceRoot,
-      "Read the managed continuation capsule and return the remembered token in payload.content.",
-      {
-        session: {
-          mode: "fork",
-          handle: first.json.session.handle
-        }
-      }
-    ),
-    expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
-  });
-  if (second.json.session.handle === first.json.session.handle) {
-    throw new Error(`${backend} fork continuation should create a new session handle`);
-  }
-  assertEq(second.json.session.forked_from, first.json.session.handle, `${backend} fork parent`);
-  assertEq(second.json.session.continuity_kind, "managed", `${backend} fork continuity`);
-  assertContains(String(getPayloadContent(second.json)), token, `${backend} fork token`);
-  await pauseStep(context);
-}
-
-export async function runSessionDeletion(
+export async function runContinuationBackendMismatchRejection(
   context: IntegrationContext,
   backend: IntegrationAgent,
   sourceRoot: string,
   prefix: string
 ) {
-  const response = await executeRequest({
-    context,
-    name: `${prefix}-create`,
-    request: buildRequest(backend, sourceRoot, "Set payload.content to cleanup-ok."),
-    expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
-  });
-  const handle = response.json.session.handle;
-  if (!handle) {
-    throw new Error(`${prefix} session deletion requires a persisted session handle`);
-  }
-  const deleted = await fetchJson<{ deleted: boolean; handle: string }>({
-    context,
-    method: "DELETE",
-    path: `/sessions/${encodeURIComponent(handle)}`,
-    expectedHttp: 200,
-    name: `${prefix}-delete`
-  });
-  assertEq(deleted.deleted, true, `${prefix} deleted`);
-  await fetchJson<{ error: { code: string; message: string } }>({
-    context,
-    method: "GET",
-    path: `/sessions/${encodeURIComponent(handle)}`,
-    expectedHttp: 404,
-    name: `${prefix}-get-missing`
-  });
-  await pauseStep(context);
-}
-
-export async function runUnknownSessionRejection(
-  context: IntegrationContext,
-  backend: IntegrationAgent,
-  sourceRoot: string,
-  prefix: string
-) {
-  const response = await executeRequest({
+  const mismatchedBackend = backend === "codex" ? "claude" : "codex";
+  const result = await executeRawStream({
     context,
     name: prefix,
-    request: buildRequest(
+    body: JSON.stringify(buildRequest(
       backend,
       sourceRoot,
-      "Continue a missing session.",
+      "Reject this request before execution starts.",
       {
-        session: {
-          mode: "continue",
-          handle: "sess_missing_integration"
-        }
+        continuation: {
+          backend: mismatchedBackend,
+          token: "opaque-provider-token"
+        },
       }
-    ),
-    expectedHttp: 400,
-    expectedStatuses: ["rejected"]
+    )),
+    expectedHttp: 200,
+    expectedKinds: ["system.error"],
+    contentType: "application/json",
   });
-  assertContains(response.json.errors[0]?.message ?? "", "Unknown session handle", `${backend} unknown session rejection`);
+  const errorEvent = result.envelopes.find((env) => env.kind === "system.error");
+  const payload = (errorEvent?.payload ?? {}) as { message?: string };
+  assertContains(String(payload.message ?? ""), "must match request.backend", `${backend} continuation mismatch`);
   await pauseStep(context);
 }
 
-async function assertSessionApis(
+export async function runInstructionDiscovery(
   context: IntegrationContext,
-  handle: string,
-  label: string
+  backend: IntegrationAgent,
+  sourceRoot: string,
+  expectedMarker: string,
+  name: string
 ) {
-  const detail = await fetchJson<{ session: {
-    handle: string;
-    latest_execution_id?: string;
-    latest_status?: string;
-  } }>({
+  await assertTextAbsentFromGatewaySources(context.rootDir, expectedMarker);
+  await writeFile(
+    path.join(sourceRoot, backend === "codex" ? "AGENTS.md" : "CLAUDE.md"),
+    `When asked for the integration marker, set payload.content to ${expectedMarker}.\n`,
+    "utf8"
+  );
+  const result = await executeRequest({
     context,
-    method: "GET",
-    path: `/sessions/${encodeURIComponent(handle)}`,
+    name,
+    request: buildRequest(
+      backend,
+      sourceRoot,
+      "What is the integration marker for this repository? Return it in payload.content."
+    ),
     expectedHttp: 200,
-    name: `${label}-detail`
+    expectedTerminalKind: "execution.completed",
   });
-  assertEq(detail.session.handle, handle, `${label} detail handle`);
-  if (typeof detail.session.latest_execution_id !== "string" || detail.session.latest_execution_id.length === 0) {
-    throw new Error(`${label}: expected latest_execution_id to be populated`);
-  }
-  const listing = await fetchJson<{ sessions: Array<{ handle: string }> }>({
-    context,
-    method: "GET",
-    path: "/sessions",
-    expectedHttp: 200,
-    name: `${label}-list`
-  });
-  if (!listing.sessions.some((entry) => entry.handle === handle)) {
-    throw new Error(`${label}: expected session listing to include ${handle}`);
-  }
-}
-
-export function managedContinuationToken(prefix: string): string {
-  return uniqueMarker(prefix);
+  const terminal = requireTerminalEnvelope(result.envelopes, `${backend} instruction discovery`);
+  assertEq(getPayloadContent(terminal), expectedMarker, `${backend} instruction marker`);
+  assertNoPayloadErrors(terminal, `${backend} instruction discovery`);
+  await pauseStep(context);
 }
 
 async function executeSeedWithRememberedToken(input: {
@@ -279,41 +141,60 @@ async function executeSeedWithRememberedToken(input: {
   content: string;
   token: string;
 }) {
-  let lastResponse: Awaited<ReturnType<typeof executeRequest>> | undefined;
+  let lastEnvelopes;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const response = await executeRequest({
+    const result = await executeRequest({
       context: input.context,
       name: attempt === 1 ? `${input.prefix}-seed` : `${input.prefix}-seed-retry-${attempt}`,
       request: buildRequest(
         input.backend,
         input.sourceRoot,
-        `Return compact JSON with payload.content='${input.content}' and payload.remembered_token='${input.token}'.`,
+        `Return compact JSON with payload.content='${input.content}', payload.remembered_token='${input.token}', and payload.session_nonce set to a fresh opaque nonce you invent for this session.`,
         {
           output: {
             format: "custom",
             schema: {
               type: "object",
-              required: ["content", "remembered_token"],
+              required: ["content", "remembered_token", "session_nonce"],
               additionalProperties: false,
               properties: {
                 content: { type: "string" },
-                remembered_token: { type: "string" }
-              }
-            }
-          }
+                remembered_token: { type: "string" },
+                session_nonce: { type: "string" },
+              },
+            },
+          },
         }
       ),
       expectedHttp: 200,
-      expectedStatuses: ["completed", "partial"]
+      expectedTerminalKind: "execution.completed",
     });
-    lastResponse = response;
-    const payload = getPayloadRecord(response.json);
+    lastEnvelopes = result.envelopes;
+    const terminal = requireTerminalEnvelope(result.envelopes, `${input.prefix} seed`);
+    const payload = getAgentOutput(terminal);
     const rememberedToken = typeof payload.remembered_token === "string" ? payload.remembered_token : "";
-    if (rememberedToken.includes(input.token)) {
-      return response;
+    const sessionNonce = typeof payload.session_nonce === "string" ? payload.session_nonce.trim() : "";
+    if (rememberedToken.includes(input.token) && sessionNonce.length > 0) {
+      return result;
     }
   }
+  const lastTerminal = lastEnvelopes ? requireTerminalEnvelope(lastEnvelopes, `${input.prefix} seed`) : undefined;
   throw new Error(
-    `${input.prefix} seed remembered_token missing expected token '${input.token}'; final payload=${JSON.stringify(lastResponse?.json.result.payload ?? {})}`
+    `${input.prefix} seed remembered_token missing expected token '${input.token}'; final payload=${JSON.stringify(lastTerminal?.payload ?? {})}`
   );
+}
+
+function extractContinuation(envelope: ReturnType<typeof requireTerminalEnvelope>) {
+  const payload = (envelope.payload ?? {}) as { continuation?: { backend?: string; token?: string } };
+  if (typeof payload.continuation?.backend !== "string" || typeof payload.continuation?.token !== "string") {
+    return undefined;
+  }
+  return {
+    backend: payload.continuation.backend as IntegrationAgent,
+    token: payload.continuation.token,
+  };
+}
+
+export function managedContinuationToken(prefix: string): string {
+  return uniqueMarker(prefix);
 }

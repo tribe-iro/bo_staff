@@ -1,21 +1,24 @@
+import type { BomcpEnvelope } from "./bomcp/types.ts";
 import type {
-  BoStaffEvent,
+  ActiveExecutionResponse,
+  CancelExecutionResponse,
   ExecutionRequest,
-  ExecutionResponse,
-  GatewayHttpResponse,
-  SessionListResponse,
-  SessionRecordSummary
+  HealthResponse
 } from "./types.ts";
+import type { SyncRunResult } from "./api/sync-response.ts";
 
-export interface BoStaffClientOptions {
-  baseUrl?: string;
+// ---------------------------------------------------------------------------
+// Options and errors
+// ---------------------------------------------------------------------------
+
+export interface BoClientOptions {
+  url?: string;
   fetchImpl?: typeof fetch;
 }
 
 export class BoStaffClientHttpError extends Error {
   readonly status: number;
   readonly body: unknown;
-
   constructor(message: string, status: number, body: unknown) {
     super(message);
     this.name = "BoStaffClientHttpError";
@@ -26,7 +29,6 @@ export class BoStaffClientHttpError extends Error {
 
 export class BoStaffClientStreamError extends Error {
   readonly cause?: unknown;
-
   constructor(message: string, cause?: unknown) {
     super(message);
     this.name = "BoStaffClientStreamError";
@@ -34,190 +36,195 @@ export class BoStaffClientStreamError extends Error {
   }
 }
 
-export class BoStaffClient {
+// ---------------------------------------------------------------------------
+// Run options (Layer 0/1)
+// ---------------------------------------------------------------------------
+
+export interface RunOptions {
+  backend?: string;
+  continuation?: { backend: string; token: string };
+  workspace?: string;
+  model?: string;
+  timeout?: number;
+  reasoning?: string;
+  objective?: string;
+  constraints?: string[];
+  context?: Record<string, unknown>;
+  attachments?: unknown[];
+  output?: Record<string, unknown>;
+  stream?: boolean;
+  verbose?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// BoClient — the ergonomic API
+// ---------------------------------------------------------------------------
+
+export class BoClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
 
-  constructor(options: BoStaffClientOptions = {}) {
-    this.baseUrl = (options.baseUrl ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
+  constructor(options: BoClientOptions = {}) {
+    this.baseUrl = (options.url ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
-  async health(): Promise<unknown> {
-    return this.request("GET", "/health");
-  }
+  // -------------------------------------------------------------------------
+  // Layer 0/1: sync run
+  // -------------------------------------------------------------------------
 
-  async execute(request: ExecutionRequest): Promise<ExecutionResponse> {
-    return this.request("POST", "/executions", request);
-  }
-
-  async executeWithMetadata(request: ExecutionRequest): Promise<GatewayHttpResponse<ExecutionResponse>> {
-    return this.requestWithMetadata("POST", "/executions", request);
-  }
-
-  // Streaming keeps HTTP 200 once the NDJSON transport is established. Callers must inspect the
-  // terminal event to determine execution success or failure; only transport/setup failures throw.
-  async *executeStream(request: ExecutionRequest): AsyncGenerator<BoStaffEvent, void, void> {
-    const response = await this.fetchImpl(`${this.baseUrl}/executions/stream`, {
+  async run(prompt: string, opts: RunOptions = {}): Promise<SyncRunResult> {
+    const body = { prompt, ...opts, stream: false };
+    const response = await this.fetchImpl(`${this.baseUrl}/run`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(request)
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    if (!response.ok) {
+      throw new BoStaffClientHttpError(
+        extractHttpErrorMessage(text, response.status, response.statusText),
+        response.status,
+        parseMaybeJson(text),
+      );
+    }
+    return JSON.parse(text) as SyncRunResult;
+  }
+
+  // -------------------------------------------------------------------------
+  // Layer 0/1: streaming run
+  // -------------------------------------------------------------------------
+
+  async *stream(prompt: string, opts: RunOptions = {}): AsyncGenerator<BomcpEnvelope, void, void> {
+    const body = { prompt, ...opts, stream: true };
+    yield* this.streamNdjson(`${this.baseUrl}/run`, body);
+  }
+
+  // -------------------------------------------------------------------------
+  // Layer 2: direct streaming (full ExecutionRequest)
+  // -------------------------------------------------------------------------
+
+  async *executeStream(request: ExecutionRequest): AsyncGenerator<BomcpEnvelope, void, void> {
+    yield* this.streamNdjson(`${this.baseUrl}/executions/stream`, request);
+  }
+
+  // -------------------------------------------------------------------------
+  // Queries
+  // -------------------------------------------------------------------------
+
+  async getExecution(executionId: string): Promise<ActiveExecutionResponse | undefined> {
+    try {
+      return await this.json<ActiveExecutionResponse>("GET", `/executions/${enc(executionId)}`);
+    } catch (err) {
+      if (err instanceof BoStaffClientHttpError && err.status === 404) return undefined;
+      throw err;
+    }
+  }
+
+  async cancelExecution(executionId: string): Promise<CancelExecutionResponse> {
+    return this.json<CancelExecutionResponse>("POST", `/executions/${enc(executionId)}/cancel`);
+  }
+
+  async health(): Promise<HealthResponse> {
+    return this.json<HealthResponse>("GET", "/health");
+  }
+
+  // -------------------------------------------------------------------------
+  // Internal
+  // -------------------------------------------------------------------------
+
+  private async json<T = unknown>(method: string, pathname: string, body?: unknown): Promise<T> {
+    const response = await this.fetchImpl(`${this.baseUrl}${pathname}`, {
+      method,
+      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const text = await response.text();
+    const parsed = parseMaybeJson(text);
+    if (!response.ok) {
+      throw new BoStaffClientHttpError(
+        isErrorBody(parsed) ? parsed.error.message : (text.trim() || `${response.status} ${response.statusText}`),
+        response.status,
+        parsed,
+      );
+    }
+    return parsed as T;
+  }
+
+  private async *streamNdjson(url: string, body: unknown): AsyncGenerator<BomcpEnvelope, void, void> {
+    const response = await this.fetchImpl(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
     });
     if (!response.ok || !response.body) {
       const text = await response.text();
       throw new BoStaffClientHttpError(
         extractHttpErrorMessage(text, response.status, response.statusText),
         response.status,
-        parseMaybeJson(text)
+        parseMaybeJson(text),
       );
     }
-
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     try {
       while (true) {
         const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
+        if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        let newlineIndex = buffer.indexOf("\n");
-        while (newlineIndex >= 0) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          buffer = buffer.slice(newlineIndex + 1);
-          if (line) {
-            yield parseStreamEvent(line);
-          }
-          newlineIndex = buffer.indexOf("\n");
+        let nl = buffer.indexOf("\n");
+        while (nl >= 0) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (line) yield parseEnvelope(line);
+          nl = buffer.indexOf("\n");
         }
       }
       const remainder = buffer.trim();
-      if (remainder) {
-        yield parseStreamEvent(remainder);
-      }
-    } catch (error) {
-      throw error instanceof BoStaffClientStreamError
-        ? error
-        : new BoStaffClientStreamError("Failed while reading execution stream", error);
+      if (remainder) yield parseEnvelope(remainder);
+    } catch (err) {
+      if (err instanceof BoStaffClientStreamError) throw err;
+      throw new BoStaffClientStreamError("Failed while reading stream", err);
     }
   }
+}
 
-  async listSessions(input?: { limit?: number; cursor?: string }): Promise<SessionListResponse> {
-    const search = new URLSearchParams();
-    if (typeof input?.limit === "number" && Number.isInteger(input.limit) && input.limit > 0) {
-      search.set("limit", String(input.limit));
-    }
-    if (typeof input?.cursor === "string" && input.cursor.length > 0) {
-      search.set("cursor", input.cursor);
-    }
-    const pathname = search.size > 0 ? `/sessions?${search.toString()}` : "/sessions";
-    return this.request("GET", pathname);
-  }
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
 
-  async getSession(handle: string): Promise<{ session: SessionRecordSummary } | undefined> {
-    try {
-      return await this.request("GET", `/sessions/${encodeURIComponent(handle)}`);
-    } catch (error) {
-      if (error instanceof BoStaffClientHttpError && error.status === 404) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
+export function createBo(opts?: BoClientOptions): BoClient {
+  return new BoClient(opts);
+}
 
-  async deleteSession(handle: string): Promise<{ deleted: boolean; handle: string }> {
-    return this.request("DELETE", `/sessions/${encodeURIComponent(handle)}`);
-  }
+// Convenience aliases
+export { BoClient as BoStaffClient };
+export type { BoClientOptions as BoStaffClientOptions };
 
-  async getExecution(executionId: string): Promise<{ execution: ExecutionResponse } | undefined> {
-    try {
-      return await this.request("GET", `/executions/${encodeURIComponent(executionId)}`);
-    } catch (error) {
-      if (error instanceof BoStaffClientHttpError && error.status === 404) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  async getExecutionEvents(executionId: string): Promise<{ events: BoStaffEvent[] } | undefined> {
-    try {
-      return await this.request("GET", `/executions/${encodeURIComponent(executionId)}/events`);
-    } catch (error) {
-      if (error instanceof BoStaffClientHttpError && error.status === 404) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-
-  async cancelExecution(executionId: string): Promise<{ cancelled: boolean; execution_id: string }> {
-    return this.request("POST", `/executions/${encodeURIComponent(executionId)}/cancel`);
-  }
-
-  private async request<T>(method: string, pathname: string, body?: unknown): Promise<T> {
-    const response = await this.requestWithMetadata<T>(method, pathname, body);
-    return response.body;
-  }
-
-  private async requestWithMetadata<T>(method: string, pathname: string, body?: unknown): Promise<GatewayHttpResponse<T>> {
-    const response = await this.fetchImpl(`${this.baseUrl}${pathname}`, {
-      method,
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body)
-    });
-    const text = await response.text();
-    const parsed = parseMaybeJson(text);
-    if (!response.ok) {
-      const message = isErrorBody(parsed)
-        ? parsed.error.message
-        : (text.trim() || `${response.status} ${response.statusText}`);
-      throw new BoStaffClientHttpError(message, response.status, parsed);
-    }
-    const headers = Object.fromEntries(response.headers.entries());
-    return {
-      body: parsed as T,
-      http_status: response.status,
-      headers,
-      request_id: headers["x-request-id"]
-    };
-  }
+function enc(s: string): string {
+  return encodeURIComponent(s);
 }
 
 function extractHttpErrorMessage(text: string, status: number, statusText: string): string {
   const parsed = parseMaybeJson(text);
-  return isErrorBody(parsed)
-    ? parsed.error.message
-    : (text.trim() || `${status} ${statusText}`);
+  return isErrorBody(parsed) ? parsed.error.message : (text.trim() || `${status} ${statusText}`);
 }
 
 function parseMaybeJson(text: string): unknown {
-  if (!text.trim()) {
-    return null;
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return {
-      error: {
-        code: "invalid_json_response",
-        message: text.trim()
-      }
-    };
-  }
+  if (!text.trim()) return null;
+  try { return JSON.parse(text); } catch { return { error: { code: "invalid_json_response", message: text.trim() } }; }
 }
 
 function isErrorBody(value: unknown): value is { error: { message: string } } {
-  return Boolean(value)
-    && typeof value === "object"
-    && typeof (value as { error?: { message?: unknown } }).error?.message === "string";
+  return Boolean(value) && typeof value === "object" && typeof (value as { error?: { message?: unknown } }).error?.message === "string";
 }
 
-function parseStreamEvent(line: string): BoStaffEvent {
-  try {
-    return JSON.parse(line) as BoStaffEvent;
-  } catch (error) {
-    throw new BoStaffClientStreamError(`Malformed NDJSON event: ${line.slice(0, 200)}`, error);
-  }
+function parseEnvelope(line: string): BomcpEnvelope {
+  try { return JSON.parse(line) as BomcpEnvelope; } catch (err) { throw new BoStaffClientStreamError(`Malformed NDJSON envelope: ${line.slice(0, 200)}`, err); }
 }

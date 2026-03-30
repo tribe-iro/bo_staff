@@ -22,28 +22,17 @@ export function buildRequest(
   prompt: string,
   overrides: DeepPartial<ExecutionRequest> = {}
 ): ExecutionRequest {
-  const defaultFilesystem = backend === "claude" ? "workspace_write" : "read_only";
   const request: ExecutionRequest = {
     backend,
     execution_profile: {
-      performance_tier: "balanced",
-      reasoning_tier: "standard",
-      selection_mode: "managed"
+      model: backend === "claude" ? "claude-sonnet-4-6" : "gpt-5",
+      reasoning_effort: "medium"
     },
     task: {
       prompt
     },
-    session: {
-      mode: "new"
-    },
     workspace: {
-      source_root: sourceRoot,
-      writeback: "apply"
-    },
-    policy: {
-      isolation: "default",
-      approvals: "default",
-      filesystem: defaultFilesystem
+      source_root: sourceRoot
     },
     output: {
       format: "message",

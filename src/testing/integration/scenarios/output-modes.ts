@@ -1,6 +1,12 @@
 import type { IntegrationContext } from "../fixtures.ts";
 import { pauseStep } from "../fixtures.ts";
-import { assertEq, assertNoErrors, executeRequest } from "../assertions.ts";
+import {
+  assertEq,
+  assertNoPayloadErrors,
+  executeRequest,
+  getAgentOutput,
+  requireTerminalEnvelope,
+} from "../assertions.ts";
 import { buildRequest, type IntegrationAgent } from "./common.ts";
 
 export async function runStructuredOutputScenario(
@@ -9,7 +15,7 @@ export async function runStructuredOutputScenario(
   sourceRoot: string,
   prefix: string
 ) {
-  const response = await executeRequest({
+  const result = await executeRequest({
     context,
     name: prefix,
     request: buildRequest(
@@ -25,18 +31,19 @@ export async function runStructuredOutputScenario(
             additionalProperties: false,
             properties: {
               content: { type: "string" },
-              status: { type: "string" }
-            }
-          }
-        }
+              status: { type: "string" },
+            },
+          },
+        },
       }
     ),
     expectedHttp: 200,
-    expectedStatuses: ["completed", "partial"]
+    expectedTerminalKind: "execution.completed",
   });
-  const payload = response.json.result.payload as Record<string, unknown>;
-  assertEq(payload.content, "structured-ok", `${backend} structured payload content`);
-  assertEq(payload.status, "ok", `${backend} structured payload status`);
-  assertNoErrors(response.json, `${backend} structured output`);
+  const terminal = requireTerminalEnvelope(result.envelopes, `${backend} structured output`);
+  const output = getAgentOutput(terminal);
+  assertEq(output.content, "structured-ok", `${backend} structured payload content`);
+  assertEq(output.status, "ok", `${backend} structured payload status`);
+  assertNoPayloadErrors(terminal, `${backend} structured output`);
   await pauseStep(context);
 }

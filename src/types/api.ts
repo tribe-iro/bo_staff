@@ -1,68 +1,43 @@
 import type {
   ArtifactRecord,
-  CapabilityDiagnostic,
-  CapabilityName,
-  CapabilityOutcome,
-  ControlGateRecord,
-  ContinuityKind,
-  ExecutionStatus,
-  MaterializationPlanEntry,
-  SessionMode,
-  WorkspaceMaterializationStatus,
-  WorkspaceScopeStatus,
-  WorkspaceWritebackStatus
+  WorkspaceScopeStatus
 } from "../core/index.ts";
-import type { PerformanceTier, ReasoningTier } from "../engine/types.ts";
-import type { JsonSchema } from "./schema.ts";
+import type { ExecutionStatus } from "../bomcp/types.ts";
+import type { ErrorCategory, ErrorCode } from "../errors/taxonomy.ts";
+import type { JsonSchema, ValidationIssue } from "./schema.ts";
 
+// Re-export bomcp types as canonical event/envelope types
+export type { BomcpMessageKind as BoStaffEventName } from "../bomcp/types.ts";
+export type { BomcpEnvelope as BoStaffEvent } from "../bomcp/types.ts";
+
+export const API_VERSION = "v0.2" as const;
 export const BACKEND_NAMES = ["codex", "claude"] as const;
 export type BackendName = (typeof BACKEND_NAMES)[number];
-export type SandboxMode = "read-only" | "workspace-write" | "danger-full-access";
-export const SELECTION_MODES = ["managed", "pinned", "override"] as const;
-export type SelectionMode = (typeof SELECTION_MODES)[number];
-export type DurabilityKind = "persistent" | "ephemeral";
 export const OUTPUT_FORMATS = ["message", "custom"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
-export const POLICY_ISOLATION_MODES = ["default", "require_workspace_isolation"] as const;
-export const POLICY_APPROVAL_MODES = ["default", "forbid_interactive_approvals"] as const;
-export const POLICY_FILESYSTEM_MODES = ["default", "read_only", "workspace_write", "full_access"] as const;
-export type ExecutionProgressState = "running" | "waiting_for_control_gate" | "finished";
-export const EXECUTION_PERSISTENCE_STATUSES = ["persisted", "failed", "not_attempted"] as const;
-export type ExecutionPersistenceStatus = (typeof EXECUTION_PERSISTENCE_STATUSES)[number];
+export const OUTPUT_SCHEMA_ENFORCEMENTS = ["strict", "advisory"] as const;
+export type OutputSchemaEnforcement = (typeof OUTPUT_SCHEMA_ENFORCEMENTS)[number];
+export const TOOL_POLICY_MODES = ["default", "allowlist", "denylist"] as const;
+export type ToolPolicyMode = (typeof TOOL_POLICY_MODES)[number];
+export const MCP_TRANSPORTS = ["stdio", "sse"] as const;
+export type McpTransport = (typeof MCP_TRANSPORTS)[number];
+export const MCP_APPROVAL_MODES = ["never", "always"] as const;
+export type McpApprovalMode = (typeof MCP_APPROVAL_MODES)[number];
+export type ExecutionProgressState = "running" | "finished";
 
-export interface ExecutionPolicy {
-  isolation: (typeof POLICY_ISOLATION_MODES)[number];
-  approvals: (typeof POLICY_APPROVAL_MODES)[number];
-  filesystem: (typeof POLICY_FILESYSTEM_MODES)[number];
-}
-
-export interface ContinuationCapsuleMemorySlotRememberedToken {
-  key: "remembered_token";
-  value: string;
-}
-
-export interface ContinuationCapsuleMemorySlotArtifactRefs {
-  key: "artifact_refs";
-  value: string[];
-}
-
-export type ContinuationCapsuleMemorySlot =
-  | ContinuationCapsuleMemorySlotRememberedToken
-  | ContinuationCapsuleMemorySlotArtifactRefs;
-
-export interface ContinuationCapsule {
-  schema_version: 1;
-  prior_execution_id: string;
-  backend_origin: BackendName;
-  result_summary: string;
-  memory_slots: ContinuationCapsuleMemorySlot[];
-  total_bytes: number;
+export interface ExecutionProgressProjection {
+  current_phase?: string;
+  last_meaningful_message?: string;
+  last_tool_command?: string;
+  last_provider_event?: string;
+  last_event_at?: string;
 }
 
 export interface UsageSummary {
   duration_ms?: number;
   input_tokens?: number;
   output_tokens?: number;
+  turns?: number;
 }
 
 export interface GatewayHttpResponse<T> {
@@ -106,26 +81,49 @@ export interface PathAttachment {
 
 export type Attachment = InlineAttachment | PathAttachment;
 
+export interface ContinuationReference {
+  backend: BackendName;
+  token: string;
+}
+
+export interface BuiltinToolPolicy {
+  mode: ToolPolicyMode;
+  tools?: string[];
+}
+
+export interface McpServerSpec {
+  name: string;
+  transport: McpTransport;
+  command?: string;
+  args?: string[];
+  url?: string;
+  env?: Record<string, string>;
+  headers?: Record<string, string>;
+  require_approval?: McpApprovalMode;
+}
+
+export interface ToolConfiguration {
+  builtin_policy?: BuiltinToolPolicy;
+  mcp_servers?: McpServerSpec[];
+}
+
 export interface ExecutionRequestWorkspace {
   source_root: string;
   scope?: {
     mode?: "full" | "subpath";
     subpath?: string;
   };
-  writeback?: "apply" | "discard";
 }
 
 export interface ExecutionRequest {
   backend: BackendName;
-  execution_profile?: {
-    performance_tier?: PerformanceTier;
-    reasoning_tier?: ReasoningTier;
-    selection_mode?: SelectionMode;
-    pin?: string;
-    override?: string;
+  execution_profile: {
+    model: string;
+    reasoning_effort?: string;
   };
   runtime?: {
     timeout_ms?: number;
+    max_turns?: number;
   };
   task: {
     prompt: string;
@@ -134,31 +132,30 @@ export interface ExecutionRequest {
     attachments?: AttachmentInput[];
     constraints?: string[];
   };
-  session?: {
-    mode?: SessionMode;
-    handle?: string | null;
-  };
+  continuation?: ContinuationReference;
   workspace?: ExecutionRequestWorkspace;
-  policy?: Partial<ExecutionPolicy>;
   output?: {
     format?: OutputFormat;
     schema?: JsonSchema;
+    schema_enforcement?: OutputSchemaEnforcement;
   };
-  hints?: Record<string, unknown>;
+  tool_configuration?: ToolConfiguration;
+  lease?: {
+    allowed_tools?: string[];
+    timeout_seconds?: number;
+  };
   metadata?: Record<string, unknown>;
 }
 
 export interface NormalizedExecutionRequest {
   backend: BackendName;
   execution_profile: {
-    performance_tier: PerformanceTier;
-    reasoning_tier: ReasoningTier;
-    selection_mode: SelectionMode;
-    pin?: string;
-    override?: string;
+    model: string;
+    reasoning_effort?: string;
   };
   runtime: {
     timeout_ms: number;
+    max_turns?: number;
   };
   task: {
     prompt: string;
@@ -167,20 +164,15 @@ export interface NormalizedExecutionRequest {
     attachments: Attachment[];
     constraints: string[];
   };
-  session: {
-    mode: SessionMode;
-    handle: string | null;
-  };
+  continuation?: ContinuationReference;
   workspace: {
     kind: "provided";
-    topology: "direct" | "git_isolated";
+    topology: "direct";
     source_root: string;
     scope: {
       mode: "full" | "subpath";
       subpath?: string;
     };
-    writeback: "apply" | "discard";
-    sandbox: SandboxMode;
   } | {
     kind: "ephemeral";
     topology: "direct";
@@ -188,47 +180,51 @@ export interface NormalizedExecutionRequest {
     scope: {
       mode: "full";
     };
-    writeback: "discard";
-    sandbox: SandboxMode;
   };
-  policy: ExecutionPolicy;
   output: {
     format: OutputFormat;
     schema: JsonSchema;
+    schema_enforcement: OutputSchemaEnforcement;
   };
-  hints: Record<string, unknown>;
+  tool_configuration?: {
+    builtin_policy: BuiltinToolPolicy;
+    mcp_servers: McpServerSpec[];
+  };
   metadata: Record<string, unknown>;
 }
 
-export interface ResolvedExecutionProfile {
-  requested_performance_tier: PerformanceTier;
-  requested_reasoning_tier: ReasoningTier;
-  selection_mode: SelectionMode;
-  resolved_backend_model: string;
-  resolved_backend_reasoning_control?: string;
-  resolution_source: SelectionMode;
+export interface ExecutionProfileOutcome {
+  model: string;
+  reasoning_effort?: string;
 }
 
-export interface SessionSummary {
-  handle: string | null;
-  continued_from?: string;
-  forked_from?: string;
-  continuity_kind: ContinuityKind;
-  durability_kind: DurabilityKind;
+export interface ActiveExecutionArtifact {
+  artifact_id: string;
+  kind: string;
+  path: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ActiveExecutionResponse {
+  execution_id: string;
+  status: ExecutionStatus;
+  backend: string;
+  started_at: string;
+  artifacts: ActiveExecutionArtifact[];
+}
+
+export interface CancelExecutionResponse {
+  cancelled: true;
+  execution_id: string;
+}
+
+export interface HealthResponse {
+  status: "ok";
 }
 
 export interface WorkspaceSummary {
-  topology: "direct" | "git_isolated";
+  topology: "direct";
   scope_status: WorkspaceScopeStatus;
-  writeback_status: WorkspaceWritebackStatus;
-  materialization_status: WorkspaceMaterializationStatus;
-  diagnostics?: WorkspaceDiagnostics;
-}
-
-export interface WorkspaceDiagnostics {
-  skipped_entry_count?: number;
-  skipped_entries?: MaterializationPlanEntry[];
-  materialization_errors?: string[];
 }
 
 export interface ExecutionSummary {
@@ -241,6 +237,7 @@ export interface ExecutionSummary {
   updated_at: string;
   completed_at?: string;
   progress_state?: ExecutionProgressState;
+  progress?: ExecutionProgressProjection;
 }
 
 export interface CompactResult {
@@ -250,81 +247,45 @@ export interface CompactResult {
 }
 
 export interface ExecutionError {
-  code: string;
+  code: ErrorCode;
+  category: ErrorCategory;
   message: string;
-  retryable?: boolean;
+  retryable: boolean;
   details?: Record<string, unknown>;
 }
 
 export interface ExecutionDebug {
-  capability_diagnostics?: Record<CapabilityName, CapabilityDiagnostic>;
   [key: string]: unknown;
 }
 
-export interface ExecutionPersistenceSummary {
-  status: ExecutionPersistenceStatus;
-  reason?: string;
+export interface ExecutionValidations {
+  schema?: {
+    requested: OutputSchemaEnforcement;
+    achieved: "native_constraint" | "substrate_validated" | "prompt_only";
+    passed: boolean;
+    issues?: ValidationIssue[];
+  };
+}
+
+export interface ToolConfigurationOutcome {
+  builtin_policy_honored: boolean;
+  mcp_servers_requested: number;
+  mcp_servers_active: number;
+  failed_mcp_servers?: string[];
 }
 
 export interface ExecutionResponse {
-  api_version: "v0.1";
+  api_version: typeof API_VERSION;
   request_id: string;
   execution: ExecutionSummary;
-  persistence: ExecutionPersistenceSummary;
-  execution_profile: ResolvedExecutionProfile;
-  session: SessionSummary;
+  execution_profile: ExecutionProfileOutcome;
+  continuation?: ContinuationReference;
   workspace: WorkspaceSummary;
-  capabilities: Record<CapabilityName, CapabilityOutcome>;
   result: CompactResult;
   artifacts: ArtifactRecord[];
-  control_gates: {
-    pending: ControlGateRecord[];
-    resolved: ControlGateRecord[];
-  };
   usage?: UsageSummary;
   errors: ExecutionError[];
+  validations?: ExecutionValidations;
+  tool_configuration_outcome?: ToolConfigurationOutcome;
   debug?: ExecutionDebug;
-}
-
-export type SessionRecordSummary = Omit<SessionSummary, "handle"> & {
-  handle: string;
-  backend: BackendName;
-  created_at: string;
-  updated_at: string;
-  latest_execution_id?: string;
-  latest_status?: ExecutionStatus;
-};
-
-export interface SessionListResponse {
-  sessions: SessionRecordSummary[];
-  next_cursor?: string;
-}
-
-export interface ExecutionEventListResponse {
-  events: BoStaffEvent[];
-  next_cursor?: string;
-}
-
-export type BoStaffEventName =
-  | "execution.accepted"
-  | "execution.started"
-  | "execution.progress_initialized"
-  | "execution.progressed"
-  | "execution.degraded"
-  | "execution.awaiting_control_gate"
-  | "control_gate.requested"
-  | "control_gate.resolved"
-  | "workspace.updated"
-  | "artifact.produced"
-  | "execution.snapshot"
-  | "execution.completed"
-  | "execution.failed"
-  | "execution.rejected";
-
-export interface BoStaffEvent<T = Record<string, unknown>> {
-  event: BoStaffEventName;
-  request_id: string;
-  execution_id: string | null;
-  emitted_at: string;
-  data: T;
 }

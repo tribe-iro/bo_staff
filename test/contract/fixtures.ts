@@ -3,10 +3,8 @@ import path from "node:path";
 import { mkdtemp, mkdir, rm } from "node:fs/promises";
 import { ExecutionManager } from "../../src/engine/execution-manager.ts";
 import { BoStaff } from "../../src/gateway.ts";
-import { WorkerThreadSqliteBoStaffRepository } from "../../src/persistence/sqlite-worker-repository.ts";
 import type { AdapterEvent, BackendAdapter } from "../../src/adapters/types.ts";
 import type { ArtifactRecord, BackendName, ExecutionError, UsageSummary } from "../../src/types.ts";
-import type { BoStaffRepository } from "../../src/persistence/types.ts";
 
 interface FakeCompactOutput {
   summary: string;
@@ -16,7 +14,7 @@ interface FakeCompactOutput {
 }
 
 interface FakeAdapterResult {
-  provider_session_id?: string;
+  continuation?: { backend: BackendName; token: string };
   compact_output?: FakeCompactOutput;
   usage?: UsageSummary;
   errors?: ExecutionError[];
@@ -37,7 +35,7 @@ export class FakeAdapter implements BackendAdapter {
 
   async *execute(input: Parameters<BackendAdapter["execute"]>[0]): AsyncIterable<AdapterEvent> {
     const result = await this.factory(input);
-    yield { type: "provider.started", provider_session_id: result.provider_session_id };
+    yield { type: "provider.started", provider_session_id: result.continuation?.token };
     yield { type: "provider.progress", message: `fake-${this.backend}-progress` };
     if (result.debug) {
       yield { type: "provider.debug", debug: result.debug };
@@ -74,7 +72,7 @@ export class FakeAdapter implements BackendAdapter {
     yield {
       type: "provider.completed",
       result: {
-        provider_session_id: result.provider_session_id,
+        continuation: result.continuation,
         raw_output_text: serialized,
         usage: result.usage,
         exit_reason: "completed",
@@ -86,26 +84,20 @@ export class FakeAdapter implements BackendAdapter {
 
 export async function createTestGateway(input?: {
   adapters?: BackendAdapter[];
-}): Promise<{ gateway: BoStaff; repository: BoStaffRepository; dataDir: string; cleanup: () => Promise<void> }> {
+}): Promise<{ gateway: BoStaff; dataDir: string; cleanup: () => Promise<void> }> {
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "bo-staff-test-"));
   const workspaceRoot = path.join(dataDir, "workspace");
   await mkdir(workspaceRoot, { recursive: true });
-  const repository = new WorkerThreadSqliteBoStaffRepository(dataDir);
   const executionManager = new ExecutionManager({
     adapters: input?.adapters ?? [],
-    repository,
     dataDir
   });
   return {
     gateway: new BoStaff({
-      dataDir,
-      repository,
       executionManager
     }),
-    repository,
     dataDir,
     cleanup: async () => {
-      await repository.close();
       await rm(dataDir, { recursive: true, force: true });
     }
   };

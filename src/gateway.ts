@@ -1,151 +1,78 @@
-import { isExecutableOnPath, nowIso } from "./utils.ts";
-import { asRecord } from "./utils.ts";
-import { normalizeAndValidateRequest } from "./validation.ts";
+import { normalizeLayeredRequest } from "./api/normalize.ts";
 import { ExecutionManager } from "./engine/execution-manager.ts";
-import { deleteSessionWithResources } from "./gateway/session-lifecycle.ts";
-import type {
-  BoStaffEvent,
-  ExecutionResponse,
-  SessionListResponse,
-  SessionRecordSummary
-} from "./types.ts";
-import type { BoStaffRepository } from "./persistence/types.ts";
-import {
-  buildValidationRejectionResponse,
-  clampSessionPageLimit,
-  decodeSessionCursor,
-  snapshotToExecutionResponse,
-  toSessionRecordSummary,
-  toSessionListResponse
-} from "./gateway/response.ts";
-
-export interface BoStaffOptions {
-  dataDir: string;
-  repository: BoStaffRepository;
-  executionManager: ExecutionManager;
-  onShutdown?: () => Promise<void>;
-}
+import type { BomcpEnvelope } from "./bomcp/types.ts";
+import type { StreamWriter } from "./bomcp/controller-stream.ts";
+import type { HealthResponse, NormalizedExecutionRequest } from "./types.ts";
+import { generateHandle } from "./utils.ts";
 
 export class BoStaff {
-  private readonly options: BoStaffOptions;
+  private readonly executionManager: ExecutionManager;
 
-  constructor(options: BoStaffOptions) {
-    this.options = options;
+  constructor(input: { executionManager: ExecutionManager }) {
+    this.executionManager = input.executionManager;
   }
 
-  async execute(
-    rawRequest: unknown,
-    requestId: string,
-    options?: {
-      onEvent?: (event: BoStaffEvent) => Promise<void> | void;
-      onExecutionCreated?: (executionId: string) => Promise<void> | void;
-    }
-  ): Promise<{ httpStatus: number; body: ExecutionResponse; events: import("./types.ts").BoStaffEvent[] }> {
-    const validation = await normalizeAndValidateRequest(rawRequest);
-    if (!validation.ok) {
-      const now = nowIso();
-      const validationMessage = validation.issues.map((issue) => `${issue.path} ${issue.message}`).join("; ");
-      const response = buildValidationRejectionResponse({
-        requestId,
-        occurredAt: now,
-        message: validationMessage,
-        durabilityKind: asRecord(rawRequest)?.session && asRecord(asRecord(rawRequest)?.session)?.mode === "ephemeral"
-          ? "ephemeral"
-          : "persistent"
-      });
-      const rejectionEvent = {
-        event: "execution.rejected" as const,
-        request_id: requestId,
-        execution_id: null,
-        emitted_at: now,
-        data: {
-          reason: validationMessage
-        }
+  async execute(input: {
+    rawRequest: unknown;
+    streamWriter: StreamWriter;
+    signal: AbortSignal;
+  }): Promise<void> {
+    const normalized = await normalizeLayeredRequest(input.rawRequest);
+
+    if (!normalized.ok) {
+      const envelope: BomcpEnvelope = {
+        message_id: generateHandle("msg"),
+        kind: "system.error",
+        sequence: 1,
+        timestamp: new Date().toISOString(),
+        sender: { type: "runtime", id: "runtime" },
+        payload: {
+          code: "validation_failed",
+          message: normalized.issues.map((e) => e.message).join("; "),
+          issues: normalized.issues,
+        },
       };
-      const responseEvent = {
-        event: "execution.snapshot" as const,
-        request_id: requestId,
-        execution_id: null,
-        emitted_at: now,
-        data: {
-          response
-        }
-      };
-      await options?.onEvent?.(rejectionEvent);
-      await options?.onEvent?.(responseEvent);
-      return {
-        httpStatus: 400,
-        body: response,
-        events: [rejectionEvent, responseEvent]
-      };
+      await input.streamWriter(envelope);
+      return;
     }
 
-    const result = await this.options.executionManager.execute({
+    await this.executeNormalized({
+      request: normalized.request,
+      lease: normalized.lease,
+      streamWriter: input.streamWriter,
+      signal: input.signal,
+    });
+  }
+
+  async executeNormalized(input: {
+    request: NormalizedExecutionRequest;
+    lease?: { allowed_tools?: string[]; timeout_seconds?: number };
+    streamWriter: StreamWriter;
+    signal: AbortSignal;
+  }): Promise<void> {
+    const requestId = generateHandle("req");
+    await this.executionManager.execute({
       requestId,
-      request: validation.value,
-      onEvent: options?.onEvent,
-      onExecutionCreated: options?.onExecutionCreated
+      request: input.request,
+      lease: input.lease,
+      streamWriter: input.streamWriter,
+      signal: input.signal,
     });
-    return {
-      httpStatus: result.httpStatus,
-      body: result.response,
-      events: result.events
-    };
   }
 
-  async health(): Promise<unknown> {
-    const sessionCount = await this.options.repository.countSessions();
-    return {
-      ok: true,
-      api_version: "v0.1",
-      data_dir: this.options.dataDir,
-      runtimes: {
-        codex: await isExecutableOnPath("codex"),
-        claude: await isExecutableOnPath("claude")
-      },
-      session_count: sessionCount
-    };
+  async cancelExecution(executionId: string, reason?: string): Promise<"accepted" | "not_found"> {
+    return this.executionManager.cancelExecution(executionId, reason);
   }
 
-  async listSessions(input?: { limit?: number; cursor?: string }): Promise<SessionListResponse> {
-    const limit = clampSessionPageLimit(input?.limit);
-    const cursor = decodeSessionCursor(input?.cursor);
-    const page = await this.options.repository.listSessionsPage({
-      limit,
-      after: cursor
-    });
-    return toSessionListResponse(page);
+  getActiveExecution(executionId: string) {
+    return this.executionManager.getActiveExecution(executionId);
   }
 
-  async getSession(handle: string): Promise<SessionRecordSummary | undefined> {
-    const session = await this.options.repository.getSession(handle);
-    return session ? toSessionRecordSummary(session) : undefined;
-  }
-
-  async getExecution(executionId: string): Promise<ExecutionResponse | undefined> {
-    const execution = await this.options.repository.getExecution(executionId);
-    return execution ? snapshotToExecutionResponse(execution) : undefined;
-  }
-
-  async getExecutionEvents(executionId: string): Promise<BoStaffEvent[]> {
-    return this.options.repository.getExecutionEvents(executionId);
-  }
-
-  async cancelExecution(executionId: string): Promise<"accepted" | "not_found" | "already_terminal" | "not_cancellable"> {
-    return this.options.executionManager.cancelExecution(executionId);
-  }
-
-  async deleteSession(handle: string): Promise<boolean> {
-    return deleteSessionWithResources({
-      dataDir: this.options.dataDir,
-      repository: this.options.repository,
-      handle
-    });
+  async health(): Promise<HealthResponse> {
+    return { status: "ok" };
   }
 
   async shutdown(): Promise<void> {
-    await this.options.executionManager.shutdown();
-    await this.options.repository.close();
-    await this.options.onShutdown?.();
+    await this.executionManager.shutdown();
   }
 }

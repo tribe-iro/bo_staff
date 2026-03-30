@@ -1,0 +1,15 @@
+[Unit]
+Description=bo_staff gateway server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node %h/Projects/bo_staff/src/server.ts
+WorkingDirectory=%h/Projects/bo_staff
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

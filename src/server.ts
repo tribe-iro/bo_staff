@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import type { Server } from "node:http";
+import { createServer as createNetServer } from "node:net";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createBoStaff } from "./create-gateway.ts";
@@ -12,7 +13,6 @@ export async function createBoStaffServer() {
   const maxBodyBytes = Number(process.env.BO_STAFF_MAX_BODY_BYTES ?? 1024 * 1024);
   const gateway = await createBoStaff({
     dataDir,
-    profilesFile: process.env.BO_STAFF_PROFILES_FILE,
     maxConcurrentExecutions: parsePositiveInt(process.env.BO_STAFF_MAX_CONCURRENT_EXECUTIONS)
   });
 
@@ -55,6 +55,7 @@ export function formatStartupError(input: { error: unknown; host: string; port: 
 export async function startBoStaffServer(input?: { host?: string; port?: number }): Promise<Server> {
   const host = input?.host ?? process.env.HOST ?? "127.0.0.1";
   const port = input?.port ?? Number(process.env.PORT ?? 3000);
+  await assertPortAvailable(host, port);
   const server = await createBoStaffServer();
   await new Promise<void>((resolve, reject) => {
     const onError = (error: Error) => {
@@ -69,6 +70,26 @@ export async function startBoStaffServer(input?: { host?: string; port?: number 
     server.listen(port, host, onListening);
   });
   return server;
+}
+
+async function assertPortAvailable(host: string, port: number): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const probe = createNetServer();
+    const onError = (error: NodeJS.ErrnoException) => {
+      probe.close();
+      reject(error);
+    };
+    probe.once("error", onError);
+    probe.listen(port, host, () => {
+      probe.close((closeError) => {
+        if (closeError) {
+          reject(closeError);
+          return;
+        }
+        resolve();
+      });
+    });
+  });
 }
 
 function attachGracefulShutdown(server: Server, gateway: Awaited<ReturnType<typeof createBoStaff>>): void {

@@ -1,6 +1,8 @@
 import readline from "node:readline";
+import { appendFile } from "node:fs/promises";
 
 const marker = process.env.BO_STAFF_MCP_MARKER ?? "MCP-MARKER-MISSING";
+const logFile = process.env.BO_STAFF_MCP_LOG_FILE;
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -19,6 +21,11 @@ rl.on("line", (line) => {
   } catch {
     return;
   }
+  void logEvent("request", {
+    id: message.id,
+    method: message.method,
+    params: message.params ?? null
+  });
 
   if (typeof message.id === "undefined" || typeof message.method !== "string") {
     return;
@@ -73,10 +80,19 @@ rl.on("line", (line) => {
   }
 });
 
+async function logEvent(event, details = {}) {
+  if (!logFile) {
+    return;
+  }
+  await appendFile(logFile, `${JSON.stringify({ event, ...details })}\n`, "utf8");
+}
+
 function respond(id, result) {
+  void logEvent("respond", { id, result });
   process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result })}\n`);
 }
 
 function respondError(id, code, message) {
+  void logEvent("respond_error", { id, code, message });
   process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`);
 }

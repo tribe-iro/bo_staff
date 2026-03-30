@@ -33,6 +33,7 @@ Thumbs.db
 
 # Temp files
 tmp/
+.tmp/
 *.tmp
 
 # Local notes
