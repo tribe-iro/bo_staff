@@ -26,7 +26,7 @@ export function buildRequest(
     backend,
     execution_profile: {
       model: backend === "claude" ? "claude-sonnet-4-6" : "gpt-5",
-      reasoning_effort: "medium"
+      reasoning_effort: "standard"
     },
     task: {
       prompt

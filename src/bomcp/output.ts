@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BomcpEnvelope } from "./types.ts";
+import type { BomcpEnvelope } from "../events/types.ts";
 import { extractJsonObject } from "../json/extract.ts";
 import type {
   ArtifactRecord,
@@ -149,6 +149,7 @@ function parseArtifact(value: unknown): ArtifactRecord[] {
     artifact_id: typeof record.artifact_id === "string" ? record.artifact_id : buildSyntheticArtifactId(record),
     kind: record.kind,
     path: typeof record.path === "string" ? record.path : undefined,
+    metadata: asRecord(record.metadata) ?? undefined,
     description: typeof record.description === "string" ? record.description : undefined,
     provenance: record.provenance === "backend" || record.provenance === "caller" ? record.provenance : "framework",
     materialization_state:

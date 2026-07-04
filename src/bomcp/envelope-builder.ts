@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BomcpEnvelope, BomcpMessageKind, BomcpSender } from "./types.ts";
+import type { BomcpEnvelope, BomcpMessageKind, BomcpSender } from "../events/types.ts";
 
 function generateMessageId(): string {
   return `msg_${randomUUID().replace(/-/g, "").slice(0, 16)}`;

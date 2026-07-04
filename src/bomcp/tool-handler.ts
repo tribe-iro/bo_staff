@@ -1,11 +1,11 @@
 import * as path from "node:path";
 import { access } from "node:fs/promises";
+import type { ArtifactRecord } from "../core/artifact.ts";
 import type {
   ControlHandoffParams,
   ArtifactRegisterParams,
   ArtifactRequireParams,
   ProgressUpdateParams,
-  EphemeralExecutionState,
   HandoffAckResponse,
   IpcToolCallRequest,
   IpcToolCallResponse,
@@ -14,6 +14,7 @@ import type {
   ProgressAckResponse,
 } from "./types.ts";
 import type { ControllerStream } from "./controller-stream.ts";
+import type { EphemeralExecutionState } from "../engine/types.ts";
 import { LeaseValidator } from "./lease.ts";
 import {
   parseArtifactRegisterParams,
@@ -21,7 +22,7 @@ import {
   parseControlHandoffParams,
   parseProgressUpdateParams,
   ToolParameterError,
-} from "./params.ts";
+} from "../validation/bomcp-params.ts";
 import { resolveContainedRealPath } from "../workspace/scope.ts";
 
 class ToolExecutionStateError extends Error {
@@ -140,17 +141,21 @@ export class BomcpToolHandler {
 
     this.assertExecutionActive();
     const artifactId = `art_${(++this.artifactCounter).toString(36)}`;
-    this.state.artifacts.set(artifactId, {
+    const artifact: ArtifactRecord = {
       artifact_id: artifactId,
       kind: params.kind,
       path: params.path,
       metadata: params.metadata,
-    });
+      provenance: "backend",
+      materialization_state: "materialized",
+    };
+    this.state.artifacts.set(artifactId, artifact);
 
     await this.emitRuntimeRequired("artifact.registered", {
       artifact_id: artifactId,
       kind: params.kind,
       path: params.path,
+      metadata: params.metadata,
       status: "registered",
     }, { reply_to: agentEnv.message_id });
 
@@ -187,6 +192,12 @@ export class BomcpToolHandler {
       detail: params.detail,
     });
     this.assertDelivered(emission.delivered, "progress.update");
+    this.state.progress = {
+      ...this.state.progress,
+      current_phase: params.phase ?? this.state.progress?.current_phase,
+      last_meaningful_message: params.detail ?? this.state.progress?.last_meaningful_message,
+      last_event_at: new Date().toISOString(),
+    };
     return { acknowledged: true };
   }
 

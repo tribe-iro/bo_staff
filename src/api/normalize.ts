@@ -78,6 +78,12 @@ export async function normalizeLayeredRequest(
   // Workspace
   const rawWorkspace = typeof obj.workspace === "string" ? obj.workspace : undefined;
   const sourceRoot = rawWorkspace ? path.resolve(rawWorkspace) : undefined;
+  // Scope narrows the agent's working directory to a subpath of the workspace. It is a
+  // cwd-narrowing convenience, NOT a sandbox: provider CLIs run fully permissive and can
+  // read/write outside it. The caller owns the real trust boundary. Honoring it here (vs
+  // silently dropping it, the prior bug) keeps the compact /run surface coherent; the
+  // subpath is containment-checked downstream by validate().
+  const scopeSubpath = typeof obj.scope === "string" && obj.scope.trim() !== "" ? obj.scope : undefined;
 
   if ("sandbox" in obj) {
     issues.push({
@@ -123,6 +129,9 @@ export async function normalizeLayeredRequest(
   // Build Layer 2 request shape
   const layer2Request: Record<string, unknown> = {
     backend,
+    ...(typeof obj.execution_id === "string" ? { execution_id: obj.execution_id } : {}),
+    ...(typeof obj.inherit_host_config === "boolean" ? { inherit_host_config: obj.inherit_host_config } : {}),
+    ...(typeof obj.system_prompt_mode === "string" ? { system_prompt_mode: obj.system_prompt_mode } : {}),
     execution_profile: {
       model,
       ...(reasoning ? { reasoning_effort: reasoning } : {}),
@@ -136,7 +145,10 @@ export async function normalizeLayeredRequest(
     },
     ...(obj.continuation !== undefined ? { continuation: obj.continuation } : {}),
     ...(sourceRoot ? {
-      workspace: { source_root: sourceRoot },
+      workspace: {
+        source_root: sourceRoot,
+        ...(scopeSubpath ? { scope: { mode: "subpath", subpath: scopeSubpath } } : {}),
+      },
     } : {}),
     ...(typeof obj.runtime_timeout_ms === "number" ? { runtime: { timeout_ms: obj.runtime_timeout_ms } } : {}),
     ...(obj.output !== undefined ? { output: obj.output } : {}),
@@ -176,7 +188,7 @@ function detectLayer(obj: Record<string, unknown>): Layer {
 
   if (hasTopLevelPrompt) {
     // Layer 0 vs 1: if any Layer 1 knobs are present, it's Layer 1
-    const layer1Fields = ["model", "sandbox", "tools", "timeout", "reasoning", "objective", "constraints"];
+    const layer1Fields = ["model", "sandbox", "tools", "timeout", "reasoning", "objective", "constraints", "scope"];
     for (const field of layer1Fields) {
       if (obj[field] !== undefined) return 1;
     }

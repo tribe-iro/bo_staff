@@ -1,4 +1,5 @@
-import type { ExecutionLease, EphemeralExecutionState } from "../bomcp/types.ts";
+import type { ExecutionLease } from "../core/lease.ts";
+import type { EphemeralExecutionState } from "./types.ts";
 
 export function createEphemeralState(
   executionId: string,
@@ -14,8 +15,4 @@ export function createEphemeralState(
     processed_request_ids: new Map(),
     started_at: new Date().toISOString(),
   };
-}
-
-export function isTerminalStatus(status: EphemeralExecutionState["status"]): boolean {
-  return status === "completed" || status === "failed" || status === "cancelled";
 }

@@ -1,4 +1,4 @@
-import type { ExecutionLease } from "./types.ts";
+import type { ExecutionLease } from "../core/lease.ts";
 import { BOMCP_TOOL_NAMES } from "./types.ts";
 
 export class LeaseValidator {

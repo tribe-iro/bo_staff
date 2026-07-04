@@ -1,6 +1,6 @@
 import path from "node:path";
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import type { BomcpEnvelope, BomcpMessageKind } from "../../bomcp/types.ts";
+import type { BomcpEnvelope, BomcpMessageKind } from "../../events/types.ts";
 import type { ExecutionRequest } from "../../types.ts";
 import { asRecord } from "../../utils.ts";
 import { extractAgentContent, extractAgentOutput } from "../../bomcp/output.ts";

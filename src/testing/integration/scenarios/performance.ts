@@ -8,13 +8,14 @@ import {
   requireTerminalEnvelope,
 } from "../assertions.ts";
 import { buildRequest, type IntegrationAgent } from "./common.ts";
+import type { ReasoningTier } from "../../../types.ts";
 
 export async function runManagedProfile(
   context: IntegrationContext,
   backend: IntegrationAgent,
   sourceRoot: string,
   _profileTier: string,
-  reasoningEffort: string | undefined,
+  reasoningEffort: ReasoningTier | undefined,
   expectedModel: string,
   prefix: string
 ) {
@@ -41,7 +42,7 @@ export async function runPinnedProfile(
   backend: IntegrationAgent,
   sourceRoot: string,
   _profileTier: string,
-  reasoningEffort: string | undefined,
+  reasoningEffort: ReasoningTier | undefined,
   expectedModel: string,
   prefix: string
 ) {
@@ -76,7 +77,7 @@ export async function runOverrideModel(
     request: buildRequest(backend, sourceRoot, "Set payload.content to override-ok.", {
       execution_profile: {
         model: rawModel,
-        reasoning_effort: "medium",
+        reasoning_effort: "standard",
       },
     }),
     expectedHttp: 200,

@@ -7,7 +7,11 @@ import { reportInternalError } from "../internal-reporting.ts";
 // Line-delimited JSON over Unix domain socket.
 
 const DEFAULT_IPC_CALL_TIMEOUT_MS = 30_000;
-const MAX_IPC_BUFFER_BYTES = 256 * 1024;
+// BO-MCP IPC carries small control messages (progress / artifact notices / handoff
+// signals), never payloads. 256 KiB is ~100x headroom; an overrun is a buggy or hostile
+// peer, so the connection is dropped. Deliberately not env-tunable — no real workload
+// needs to raise it, and a knob here is pure attack surface.
+const IPC_MAX_FRAME_BYTES = 256 * 1024;
 
 export interface IpcServer {
   readonly socketPath: string;
@@ -47,12 +51,15 @@ export function createIpcServer(socketPath: string): IpcServer {
         });
         conn.on("data", (chunk: string) => {
           buffer += chunk;
-          if (buffer.length > MAX_IPC_BUFFER_BYTES) {
+          if (buffer.length > IPC_MAX_FRAME_BYTES) {
             reportInternalError("bomcp.ipc.server.frame_too_large", new Error("IPC request buffer exceeded limit"), {
               socket_path: socketPath,
               buffered_bytes: buffer.length,
             });
-            conn.destroy(new Error("IPC request buffer exceeded limit"));
+            // Drop the connection. No error argument: the overrun is already reported,
+            // and re-decorating the socket with the same error only produces a redundant
+            // 'error' emission (the connection-level 'error' listener handles teardown).
+            conn.destroy();
             return;
           }
           let newlineIndex: number;
@@ -62,7 +69,7 @@ export function createIpcServer(socketPath: string): IpcServer {
             if (!line.trim()) continue;
             void handleLine(line, conn, handler).catch((err) => {
               reportInternalError("bomcp.ipc.server.handle_line", err, { socket_path: socketPath });
-              conn.destroy(err instanceof Error ? err : new Error(String(err)));
+              conn.destroy();
             });
           }
         });
@@ -105,7 +112,7 @@ async function handleLine(
       request_id: requestId,
       line_preview: line.slice(0, 200),
     });
-    conn.destroy(err instanceof Error ? err : new Error(String(err)));
+    conn.destroy();
     return;
   }
 
@@ -126,6 +133,7 @@ export function createIpcClient(socketPath: string): IpcClient {
   let conn: net.Socket | undefined;
   const pending = new Map<string, PendingRequest>();
   let buffer = "";
+  let fatalSocketError: Error | undefined;
 
   return {
     async connect() {
@@ -134,14 +142,17 @@ export function createIpcClient(socketPath: string): IpcClient {
       socket.setEncoding("utf8");
       socket.on("data", (chunk: string) => {
         buffer += chunk;
-        if (buffer.length > MAX_IPC_BUFFER_BYTES) {
+        if (buffer.length > IPC_MAX_FRAME_BYTES) {
           const error = new Error("IPC response buffer exceeded limit");
           reportInternalError("bomcp.ipc.client.frame_too_large", error, {
             socket_path: socketPath,
             buffered_bytes: buffer.length,
           });
-          socket.destroy(error);
+          fatalSocketError = error;
           rejectPending(error);
+          // No error argument — see server-side note. Pending callers were already
+          // rejected with the precise reason; destroy(err) would double-emit.
+          socket.destroy();
           return;
         }
         let newlineIndex: number;
@@ -166,21 +177,24 @@ export function createIpcClient(socketPath: string): IpcClient {
               socket_path: socketPath,
               line_preview: line.slice(0, 200),
             });
-            socket.destroy(error);
+            fatalSocketError = error;
             rejectPending(error);
+            // No error argument — pending callers already rejected; avoids double-emit.
+            socket.destroy();
             return;
           }
         }
       });
       socket.on("error", (err) => {
         reportInternalError("bomcp.ipc.client.connection", err, { socket_path: socketPath });
-        rejectPending(err);
+        rejectPending(fatalSocketError ?? err);
       });
       socket.on("close", () => {
         if (conn === socket) {
           conn = undefined;
         }
-        rejectPending(new Error("IPC connection closed"));
+        rejectPending(fatalSocketError ?? new Error("IPC connection closed"));
+        fatalSocketError = undefined;
       });
       await new Promise<void>((resolve, reject) => {
         socket.once("connect", resolve);

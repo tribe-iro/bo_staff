@@ -15,6 +15,8 @@ It does not:
 - apply or discard repository changes
 - manage durable sessions
 - persist execution state after the process exits
+- act as a generic model API gateway
+- act as an inference router for remote APIs or local non-CLI models
 
 ## Quick Start
 
@@ -76,6 +78,9 @@ bo "analyze codebase" --stream --verbose
 
 Layer 0/1 entrypoint. Send a prompt and get back a compact result.
 
+Non-goal:
+- this API is for local CLI agents only; bo_staff is not an OpenAI-compatible completion endpoint and not a universal LLM abstraction layer
+
 Request:
 
 ```json
@@ -92,6 +97,7 @@ Response:
   "status": "completed",
   "output": "Fixed the failing validation tests by updating expected error messages.",
   "artifacts": [],
+  "handoffs": [],
   "continuation": {
     "backend": "codex",
     "token": "opaque-backend-token"
@@ -114,7 +120,8 @@ Fields:
 | `backend` | string | auto | `claude` or `codex` |
 | `model` | string | per backend | Model ID |
 | `timeout` | number | 600 | Seconds before timeout |
-| `reasoning` | string | `standard` | Reasoning tier |
+| `reasoning` | string | `standard` | Reasoning tier — one of `none`, `light`, `standard`, `deep`. Any other value is rejected. |
+| `scope` | string | — | Subpath of `workspace` to run in. Narrows the working directory; **not a sandbox** (see Notes). |
 | `stream` | boolean | false | If true, `POST /run` returns NDJSON |
 | `verbose` | boolean | false | Include full event history in sync output |
 
@@ -123,6 +130,10 @@ Notes:
 - bo_staff does not create a git sandbox or compute a repository diff.
 - Backend CLIs are launched with fully permissive provider-side permission modes.
 - `continuation` is returned only when the backend exposes a resumable opaque token.
+- `scope` narrows the agent's working directory to a subpath of the workspace. It is a convenience, **not a security boundary** — provider CLIs run fully permissive and can read or write outside it. bo_staff's own file operations are containment-checked; the caller owns the real trust boundary.
+- `handoffs` lists the execution-scoped handoff signals (`blocked`, `needs_input`, `needs_approval`, `continue_with_prompt`, `completed`, …) the agent emitted. bo_staff does not act on them; the caller owns the workflow loop between runs.
+- A synchronous `POST /run` is cancelled by closing the connection. For explicit mid-flight cancellation, stream the run (`"stream": true` or `POST /executions/stream`) and call `POST /executions/:id/cancel` with the `execution_id` from the early `execution.started` event.
+- The reasoning tier is mapped per backend to the provider's native effort setting; the four tiers are bo_staff's unified surface, not a provider effort word.
 
 ### BO-MCP
 

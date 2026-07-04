@@ -1,92 +1,154 @@
 import { asRecord } from "../../utils.ts";
 import {
   type AdapterEvent,
-  type AdapterExecutionContext,
   type AdapterExecutionSummary,
   type ProviderEventParser
 } from "../types.ts";
-import { extractJsonObject } from "../../json/extract.ts";
-import {
-  canonicalizeProviderResultText,
-  extractStructuredProviderResultText,
-} from "../shared.ts";
+import type { UsageSummary } from "../../types.ts";
+import { NdjsonLineBuffer, parseJsonObject, parseJsonObjectLines } from "../ndjson.ts";
+import { extractStructuredProviderResultText } from "../shared.ts";
 
+// Parser for `claude -p --output-format stream-json --verbose`: a newline-delimited stream
+// of message objects (`system`/`assistant`/`user`/`result`, plus `stream_event` when partial
+// messages are enabled). We project the live events into AdapterEvents and extract the final
+// summary from the terminal `result` object. Disjoint from the Codex vocabulary by design —
+// only the NDJSON framing is shared (see ../ndjson.ts).
 export class ClaudeEventParser implements ProviderEventParser {
-  private stderrBuffer = "";
+  private readonly lines = new NdjsonLineBuffer();
+  private turnCount = 0;
 
-  onStdoutChunk(_text: string): AdapterEvent[] {
+  onStdoutChunk(text: string): AdapterEvent[] {
+    return this.lines.push(text).flatMap((line) => this.projectLine(line));
+  }
+
+  onStderrChunk(_text: string): AdapterEvent[] {
+    // With stream-json, all meaningful events arrive on stdout; stderr is debug noise.
     return [];
   }
 
-  onStderrChunk(text: string): AdapterEvent[] {
-    this.stderrBuffer += text;
-    const lines = this.stderrBuffer.split("\n");
-    this.stderrBuffer = lines.pop() ?? "";
-    return lines.flatMap((line) => this.processLine(line.trim()));
-  }
+  finish(input: { stdout: string; stderr: string }): AdapterExecutionSummary {
+    const events = parseJsonObjectLines(input.stdout);
+    const resultEvent = [...events].reverse().find((entry) => entry.type === "result");
 
-  finish(input: {
-    context: AdapterExecutionContext;
-    stdout: string;
-    stderr: string;
-  }): AdapterExecutionSummary {
-    const wrapper = asRecord(extractJsonObject(input.stdout)) ?? {};
-    const rawText = extractStructuredProviderResultText({
-      structured_output: wrapper.structured_output,
-      raw_result: wrapper.result
-    });
-    const canonicalOutput = canonicalizeProviderResultText({
-      context: input.context,
-      raw_text: rawText
-    });
-    const usage = asRecord(wrapper.usage);
-    const usageSummary = {
-      duration_ms: typeof wrapper.duration_ms === "number" ? wrapper.duration_ms : undefined,
-      input_tokens: typeof usage?.input_tokens === "number" ? usage.input_tokens : undefined,
-      output_tokens: typeof usage?.output_tokens === "number" ? usage.output_tokens : undefined
+    const rawText = resultEvent
+      ? extractStructuredProviderResultText({
+        structured_output: resultEvent.structured_output,
+        raw_result: resultEvent.result,
+      })
+      : lastAssistantText(events);
+
+    const usage = asRecord(resultEvent?.usage);
+    const usageSummary: UsageSummary = {
+      duration_ms: numberOrUndefined(resultEvent?.duration_ms),
+      input_tokens: numberOrUndefined(usage?.input_tokens),
+      output_tokens: numberOrUndefined(usage?.output_tokens),
+      cache_read_tokens: numberOrUndefined(usage?.cache_read_input_tokens),
+      cache_creation_tokens: numberOrUndefined(usage?.cache_creation_input_tokens),
+      turns: numberOrUndefined(resultEvent?.num_turns),
     };
+
     return {
-      continuation: typeof wrapper.session_id === "string"
-        ? { backend: "claude", token: wrapper.session_id }
-        : input.context.continuation,
-      raw_output_text: canonicalOutput,
+      continuation_token: typeof resultEvent?.session_id === "string" ? resultEvent.session_id : undefined,
+      raw_output_text: rawText,
       usage: Object.values(usageSummary).some((value) => value !== undefined) ? usageSummary : undefined,
-      schema_enforcement_applied: input.context.request.output.format === "custom",
-      tool_configuration_outcome: {
-        builtin_policy_honored: input.context.request.tool_configuration?.builtin_policy?.mode !== "denylist",
-        mcp_servers_requested: input.context.request.tool_configuration?.mcp_servers.length ?? 0,
-        mcp_servers_active: input.context.request.tool_configuration?.mcp_servers.length ?? 0
-      },
       debug: {
         provider_result_text: rawText,
         stdout: input.stdout,
-        stderr: input.stderr
-      }
+        stderr: input.stderr,
+      },
     };
   }
 
-  private processLine(line: string): AdapterEvent[] {
-    if (!line) {
+  private projectLine(line: string): AdapterEvent[] {
+    const record = parseJsonObject(line);
+    if (!record) {
       return [];
     }
-    return [{
-      type: "provider.progress",
-      message: line,
-      progress: {
-        current_phase: classifyClaudePhase(line),
-        last_meaningful_message: line,
-        last_provider_event: "stderr.line"
+    const type = typeof record.type === "string" ? record.type : "unknown";
+
+    switch (type) {
+      case "system":
+        return [progress("Claude session initialized.", "session", type)];
+      case "assistant":
+        return this.projectAssistant(record, type);
+      case "user":
+        return [progress("Tool result received.", "tool", type)];
+      case "result":
+        // Terminal object — surfaced by finish(); nothing live to emit.
+        return [];
+      case "stream_event":
+        // Partial-message deltas (opt-in firehose). bo_staff's stream is control, not a token relay.
+        return [];
+      default:
+        // Defensive: unknown event types pass through as generic progress, never throw.
+        return [progress(`Claude event: ${type}`, "provider", type)];
+    }
+  }
+
+  private projectAssistant(record: Record<string, unknown>, type: string): AdapterEvent[] {
+    this.turnCount += 1;
+    const events: AdapterEvent[] = [{ type: "provider.turn_boundary", turn_number: this.turnCount }];
+    const message = asRecord(record.message);
+    const content = Array.isArray(message?.content) ? message.content : [];
+    for (const rawBlock of content) {
+      const block = asRecord(rawBlock);
+      const blockType = typeof block?.type === "string" ? block.type : "";
+      if (blockType === "thinking" && typeof block?.thinking === "string") {
+        events.push(progress(block.thinking, "thinking", type));
+      } else if (blockType === "text" && typeof block?.text === "string" && block.text.trim()) {
+        events.push(progress(block.text, "provider", type));
+      } else if (blockType === "tool_use" && typeof block?.name === "string") {
+        events.push({
+          type: "provider.progress",
+          message: `tool: ${block.name}`,
+          progress: {
+            current_phase: "tool",
+            last_meaningful_message: `tool: ${block.name}`,
+            last_tool_command: describeToolUse(block.name, block.input),
+            last_provider_event: type,
+          },
+        });
       }
-    }];
+    }
+    return events;
   }
 }
 
-function classifyClaudePhase(line: string): string {
-  if (/tool|running|executing/i.test(line)) {
-    return "tool";
+function progress(message: string, phase: string, providerEvent: string): AdapterEvent {
+  return {
+    type: "provider.progress",
+    message,
+    progress: {
+      current_phase: phase,
+      last_meaningful_message: message,
+      last_provider_event: providerEvent,
+    },
+  };
+}
+
+function describeToolUse(name: string, input: unknown): string {
+  const record = asRecord(input);
+  if (record && typeof record.command === "string") {
+    return record.command;
   }
-  if (/approve|permission|clarification/i.test(line)) {
-    return "approval";
+  return name;
+}
+
+function lastAssistantText(events: Array<Record<string, unknown>>): string {
+  for (const event of [...events].reverse()) {
+    if (event.type !== "assistant") continue;
+    const message = asRecord(event.message);
+    const content = Array.isArray(message?.content) ? message.content : [];
+    const text = content
+      .map((block) => asRecord(block))
+      .filter((block) => block?.type === "text" && typeof block.text === "string")
+      .map((block) => block!.text as string)
+      .join("");
+    if (text.trim()) return text;
   }
-  return "provider";
+  return "";
+}
+
+function numberOrUndefined(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
 }

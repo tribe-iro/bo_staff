@@ -6,9 +6,11 @@ import os from "node:os";
 import net from "node:net";
 import path from "node:path";
 import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { getCliAgentDescriptor } from "../../src/adapters/descriptors.ts";
 import { createTestGateway, FakeAdapter } from "./fixtures.ts";
-import type { BomcpEnvelope, EphemeralExecutionState } from "../../src/bomcp/types.ts";
-import type { BackendAdapter, AdapterEvent } from "../../src/adapters/types.ts";
+import type { BomcpEnvelope } from "../../src/events/types.ts";
+import type { EphemeralExecutionState } from "../../src/engine/types.ts";
+import type { CliAgentAdapter, AdapterEvent } from "../../src/adapters/types.ts";
 import type { BackendName } from "../../src/types.ts";
 import { ExecutionAdmissionController } from "../../src/engine/execution-admission.ts";
 import { executeCliAdapter } from "../../src/adapters/shared.ts";
@@ -55,6 +57,68 @@ function payload(envelope: BomcpEnvelope): Record<string, unknown> {
 function gatewayTest(name: string, fn: () => Promise<void> | void): void {
   test(name, { skip: !UNIX_SOCKET_SUPPORT }, fn);
 }
+
+gatewayTest("duplicate caller-supplied execution_id is rejected while the first is in flight", async () => {
+  let release: () => void = () => {};
+  const blocked = new Promise<void>((resolve) => { release = resolve; });
+  let signalRunning: () => void = () => {};
+  const running = new Promise<void>((resolve) => { signalRunning = resolve; });
+
+  const adapter = new FakeAdapter("codex", async () => {
+    signalRunning();
+    await blocked; // hold the first execution open so it keeps its reservation
+    return { compact_output: { summary: "ok", payload: {}, pending_items: [] } };
+  });
+  const { gateway, cleanup } = await createTestGateway({ adapters: [adapter] });
+  try {
+    const req = {
+      backend: "codex",
+      execution_id: "idem-key-1",
+      task: { prompt: "do work" },
+      execution_profile: { model: "gpt-5.5" },
+    };
+    const env1: BomcpEnvelope[] = [];
+    const p1 = gateway.execute({
+      rawRequest: req,
+      streamWriter: async (e: BomcpEnvelope) => { env1.push(e); },
+      signal: new AbortController().signal,
+    });
+    await running; // first execution now holds the reservation
+
+    const env2 = await executeCollecting(gateway, req);
+    const err = findByKind(env2, "system.error");
+    assert.ok(err, "duplicate execution_id emits system.error");
+    assert.equal(payload(err!).code, "validation_failed");
+    assert.match(String(payload(err!).message), /already in flight/);
+
+    release();
+    await p1;
+    assert.ok(findByKind(env1, "execution.completed"), "first execution still completes");
+  } finally {
+    await cleanup();
+  }
+});
+
+gatewayTest("admission slot is released when the adapter throws mid-execution", async () => {
+  const adapter = new FakeAdapter("codex", () => { throw new Error("boom"); });
+  const { gateway, cleanup } = await createTestGateway({ adapters: [adapter] });
+  try {
+    const env = await executeCollecting(gateway, {
+      backend: "codex",
+      task: { prompt: "x" },
+      execution_profile: { model: "gpt-5.5" },
+    });
+    // The throw is surfaced as a terminal failure (not swallowed)...
+    assert.ok(
+      findByKind(env, "execution.failed") ?? findByKind(env, "system.error"),
+      "adapter throw produces a terminal failure",
+    );
+    // ...and the admission slot is freed — release() runs in the finally on every path (L-0103).
+    assert.equal(gateway.health().executions.active, 0, "admission slot released after adapter throw");
+  } finally {
+    await cleanup();
+  }
+});
 
 /** Build a minimal Layer 2 request targeting a fake adapter. */
 function layer2Request(overrides?: Record<string, unknown>) {
@@ -240,8 +304,9 @@ gatewayTest("continuation token round-trip: token emitted in first execution is 
 });
 
 gatewayTest("provider progress is projected with the captured agent id", async () => {
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude",
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute() {
       yield { type: "provider.started", provider_session_id: "agent_session_1" };
       yield { type: "provider.progress", message: "working" };
@@ -275,8 +340,9 @@ gatewayTest("provider progress is projected with the captured agent id", async (
 gatewayTest("control.handoff is bridged end-to-end through bomcp-server into the controller stream", async () => {
   let toolResult: unknown;
 
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude",
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(context) {
       yield { type: "provider.started", provider_session_id: "handoff_agent" };
       assert.ok(context.bomcp_server_config, "lease should inject bomcp-server config");
@@ -408,8 +474,9 @@ gatewayTest("strict output schema mismatch fails execution", async () => {
 });
 
 gatewayTest("timed-out executions clean up managed run directories", async () => {
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude",
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(input) {
       yield* executeCliAdapter({
         context: input,
@@ -681,8 +748,9 @@ gatewayTest("mid-flight cancellation emits execution.cancelled", async () => {
   let adapterStarted = false;
 
   // Adapter that blocks until aborted
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude" as BackendName,
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(input) {
       yield { type: "provider.started" } satisfies AdapterEvent;
       adapterStarted = true;
@@ -696,7 +764,14 @@ gatewayTest("mid-flight cancellation emits execution.cancelled", async () => {
       // Simulate clean exit after abort (adapter sees the signal and stops)
       yield {
         type: "provider.failed",
-        error: { message: "aborted", retryable: false, kind: "provider_process_aborted" },
+        error: {
+          command: "fake-claude",
+          reason: "aborted",
+          exit_code: null,
+          stdout: "",
+          stderr: "aborted",
+          interrupted_by: "cancel_request",
+        },
       } satisfies AdapterEvent;
     },
   };
@@ -735,8 +810,9 @@ gatewayTest("mid-flight cancellation emits execution.cancelled", async () => {
 
 gatewayTest("heartbeat envelopes are emitted during long-running execution", async () => {
   // Adapter that takes just over one heartbeat interval
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude" as BackendName,
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(_input) {
       yield { type: "provider.started" } satisfies AdapterEvent;
 
@@ -781,8 +857,9 @@ gatewayTest("admission control rejects with gateway_busy when pool is saturated"
   let resolveBlockers: Array<() => void> = [];
 
   // Adapter that blocks until manually released
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude" as BackendName,
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(_input) {
       yield { type: "provider.started" } satisfies AdapterEvent;
       await new Promise<void>((resolve) => { resolveBlockers.push(resolve); });
@@ -860,8 +937,9 @@ gatewayTest("admission control rejects with gateway_draining during shutdown", a
 gatewayTest("gateway-level draining rejects new executions with gateway_draining", async () => {
   let releaseAdapter: (() => void) | undefined;
 
-  const adapter: BackendAdapter = {
+  const adapter: CliAgentAdapter = {
     backend: "claude" as BackendName,
+    capabilities: getCliAgentDescriptor("claude")!.capabilities,
     async *execute(_input) {
       yield { type: "provider.started" } satisfies AdapterEvent;
       await new Promise<void>((resolve) => { releaseAdapter = resolve; });

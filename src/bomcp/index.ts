@@ -1,12 +1,5 @@
 export type {
-  BomcpEnvelope,
-  BomcpSender,
-  BomcpMessageKind,
   BomcpHandoffKind,
-  ExecutionLease,
-  EphemeralExecutionState,
-  ExecutionStatus,
-  MaterializationPlanEntry,
   IpcToolCallRequest,
   IpcToolCallResponse,
   ControlHandoffParams,
@@ -23,6 +16,7 @@ export type {
 } from "./types.ts";
 
 export { BOMCP_HANDOFF_KINDS, BOMCP_TOOL_NAMES } from "./types.ts";
+export type { BomcpEnvelope, BomcpSender, BomcpMessageKind } from "../events/types.ts";
 export { EnvelopeBuilder, RUNTIME_SENDER, agentSender } from "./envelope-builder.ts";
 export { ControllerStream, type StreamWriter } from "./controller-stream.ts";
 export { LeaseValidator, buildLease } from "./lease.ts";

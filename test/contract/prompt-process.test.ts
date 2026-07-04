@@ -7,12 +7,15 @@ import { runCommand } from "../../src/adapters/process.ts";
 import { ClaudeEventParser } from "../../src/adapters/claude/parser.ts";
 import { CodexEventParser } from "../../src/adapters/codex/parser.ts";
 import {
-  canonicalizeProviderResultText,
   executeCliAdapter,
   extractStructuredProviderResultText,
-  normalizeProviderResultText
 } from "../../src/adapters/shared.ts";
 import { parseCompactOutput } from "../../src/bomcp/output.ts";
+import {
+  canonicalizeProviderResultText,
+  classifyProviderFailure,
+  normalizeProviderResultText,
+} from "../../src/engine/provider-policy.ts";
 import { buildExecutionPrompt } from "../../src/engine/prompt.ts";
 import { UpstreamRuntimeError } from "../../src/errors.ts";
 import { extractSingleEmbeddedFencedJsonObjectText } from "../../src/json/extract.ts";
@@ -180,12 +183,17 @@ test("executeCliAdapter preserves terminal failure diagnostics instead of throwi
     const failure = events.at(-1);
     assert.deepEqual(events.map((event) => event.type), ["provider.started", "provider.output.chunk", "provider.failed"]);
     assert.equal(failure?.type, "provider.failed");
-    assert.match(failure?.error.message ?? "", /exited with code 7/);
-    assert.match(failure?.error.message ?? "", /stderr-line/);
-    assert.equal(failure?.error.debug?.termination_reason, "exited");
-    assert.equal(failure?.error.debug?.exit_code, 7);
-    assert.match(String(failure?.error.debug?.stderr_tail ?? ""), /stderr-line/);
-    assert.match(String(failure?.error.debug?.stdout_tail ?? ""), /stdout-line/);
+    assert.equal(failure?.error.reason, "exited");
+    assert.equal(failure?.error.exit_code, 7);
+    assert.match(failure?.error.stderr ?? "", /stderr-line/);
+    assert.match(failure?.error.stdout ?? "", /stdout-line/);
+    const classified = classifyProviderFailure(failure.error);
+    assert.match(classified.error.message, /exited with code 7/);
+    assert.match(classified.error.message, /stderr-line/);
+    assert.equal(classified.debug.termination_reason, "exited");
+    assert.equal(classified.debug.exit_code, 7);
+    assert.match(String(classified.debug.stderr_tail ?? ""), /stderr-line/);
+    assert.match(String(classified.debug.stdout_tail ?? ""), /stdout-line/);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -267,9 +275,10 @@ test("executeCliAdapter prefers meaningful structured failure output over boiler
 
     const failure = events.at(-1);
     assert.equal(failure?.type, "provider.failed");
-    assert.match(failure?.error.message ?? "", /upstream disconnected before completion/);
-    assert.doesNotMatch(failure?.error.message ?? "", /Reading prompt from stdin/);
-    assert.equal(failure?.error.debug?.output_excerpt, "upstream disconnected before completion");
+    const classified = classifyProviderFailure(failure.error);
+    assert.match(classified.error.message, /upstream disconnected before completion/);
+    assert.doesNotMatch(classified.error.message, /Reading prompt from stdin/);
+    assert.equal(classified.debug.output_excerpt, "upstream disconnected before completion");
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -301,18 +310,16 @@ test("shared provider result extraction preserves structured output objects", ()
 
 test("shared provider result canonicalization wraps direct custom payload objects into compact output", () => {
   const canonical = canonicalizeProviderResultText({
-    context: {
-      request: {
-        output: {
-          format: "custom",
-          schema: {
-            type: "object",
-            properties: {
-              outcome: { type: "string" }
-            }
+    request: {
+      output: {
+        format: "custom",
+        schema: {
+          type: "object",
+          properties: {
+            outcome: { type: "string" }
           }
         }
-      } as never
+      }
     } as never,
     raw_text: JSON.stringify({
       outcome: "success",
@@ -339,32 +346,6 @@ test("shared provider result canonicalization wraps direct custom payload object
 test("claude parser preserves structured custom output objects instead of dropping them", () => {
   const parser = new ClaudeEventParser();
   const summary = parser.finish({
-    context: {
-      request_id: "req_claude_structured",
-      execution_id: "exec_claude_structured",
-      signal: new AbortController().signal,
-      request: {
-        output: {
-          format: "custom"
-        },
-        tool_configuration: undefined
-      } as never,
-      execution_profile: {
-        model: "claude-haiku-4-5",
-        reasoning_effort: undefined
-      },
-      workspace: {
-        topology: "direct",
-        source_root: process.cwd(),
-        runtime_working_directory: process.cwd(),
-        run_dir: process.cwd(),
-        scope_status: "unbounded"
-      },
-      prompt: {
-        system: { sections: [] },
-        user: { sections: [], attachments: [] }
-      }
-    },
     stdout: JSON.stringify({
       type: "result",
       result: "",
@@ -380,8 +361,22 @@ test("claude parser preserves structured custom output objects instead of droppi
     stderr: ""
   });
 
+  const canonical = canonicalizeProviderResultText({
+    request: {
+      output: {
+        format: "custom",
+        schema: {
+          type: "object",
+          properties: {
+            outcome: { type: "string" }
+          }
+        }
+      }
+    } as never,
+    raw_text: summary.raw_output_text ?? "",
+  });
   const parsed = parseCompactOutput({
-    raw_text: summary.raw_output_text ?? ""
+    raw_text: canonical
   });
   assert.equal(parsed.status, "valid");
   assert.deepEqual(parsed.value?.payload, {

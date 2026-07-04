@@ -16,9 +16,11 @@ import {
   MCP_TRANSPORTS,
   OUTPUT_FORMATS,
   OUTPUT_SCHEMA_ENFORCEMENTS,
+  REASONING_TIERS,
+  SYSTEM_PROMPT_MODES,
   TOOL_POLICY_MODES
 } from "../types.ts";
-import { isOneOf, normalizeTimeoutMs } from "./shared.ts";
+import { isOneOf, normalizeTimeoutMs, normalizeHeartbeatIntervalMs } from "./shared.ts";
 
 export function normalizeRequest(request: ExecutionRequest): NormalizedExecutionRequest {
   const rawTask = asRecord(request.task);
@@ -56,9 +58,16 @@ export function normalizeRequest(request: ExecutionRequest): NormalizedExecution
 
   return {
     backend: request.backend,
+    execution_id: typeof request.execution_id === "string" && request.execution_id.trim() !== ""
+      ? request.execution_id
+      : undefined,
+    inherit_host_config: request.inherit_host_config === true,
+    system_prompt_mode: isOneOf(request.system_prompt_mode, SYSTEM_PROMPT_MODES)
+      ? request.system_prompt_mode
+      : "append",
     execution_profile: {
       model: typeof rawExecutionProfile?.model === "string" ? rawExecutionProfile.model : "",
-      reasoning_effort: typeof rawExecutionProfile?.reasoning_effort === "string"
+      reasoning_effort: isOneOf(rawExecutionProfile?.reasoning_effort, REASONING_TIERS)
         ? rawExecutionProfile.reasoning_effort
         : undefined
     },
@@ -66,7 +75,8 @@ export function normalizeRequest(request: ExecutionRequest): NormalizedExecution
       timeout_ms: normalizeTimeoutMs(rawRuntime?.timeout_ms),
       max_turns: typeof rawRuntime?.max_turns === "number" && Number.isInteger(rawRuntime.max_turns) && rawRuntime.max_turns > 0
         ? rawRuntime.max_turns
-        : undefined
+        : undefined,
+      heartbeat_interval_ms: normalizeHeartbeatIntervalMs(rawRuntime?.heartbeat_interval_ms),
     },
     task: {
       prompt: typeof rawTask?.prompt === "string" ? rawTask.prompt : "",

@@ -1,4 +1,4 @@
-import type { BomcpEnvelope } from "../bomcp/types.ts";
+import type { BomcpEnvelope } from "../events/types.ts";
 import { extractAgentContent } from "../bomcp/output.ts";
 import { asRecord } from "../utils.ts";
 
@@ -6,6 +6,10 @@ export interface SyncRunResult {
   status: "completed" | "failed" | "cancelled";
   output?: string;
   artifacts: Array<{ kind: string; path: string; metadata?: Record<string, unknown> }>;
+  // Handoff signals (blocked / needs_input / needs_approval / continue_with_* / completed)
+  // the agent emitted during the run. The caller owns the workflow loop between runs, so a
+  // sync result that hid these would lie about the outcome.
+  handoffs: Array<{ kind: string } & Record<string, unknown>>;
   continuation?: { backend: string; token: string };
   usage?: { input_tokens?: number; output_tokens?: number; duration_ms?: number };
   error?: { code: string; message: string };
@@ -22,6 +26,7 @@ export function buildSyncResult(envelopes: BomcpEnvelope[], opts?: { verbose?: b
   let error: SyncRunResult["error"] | undefined;
   const artifacts: SyncRunResult["artifacts"] = [];
   const seenArtifacts = new Set<string>();
+  const handoffs: SyncRunResult["handoffs"] = [];
 
   for (const env of envelopes) {
     if (env.execution_id && !executionId) {
@@ -85,6 +90,12 @@ export function buildSyncResult(envelopes: BomcpEnvelope[], opts?: { verbose?: b
         }
         break;
       }
+      case "control.handoff": {
+        if (typeof payload.kind === "string") {
+          handoffs.push({ ...payload, kind: payload.kind });
+        }
+        break;
+      }
       case "artifact.registered": {
         if (typeof payload.kind === "string") {
           pushArtifactUnique(artifacts, seenArtifacts, {
@@ -104,6 +115,7 @@ export function buildSyncResult(envelopes: BomcpEnvelope[], opts?: { verbose?: b
     status,
     output,
     artifacts,
+    handoffs,
     continuation,
     usage,
     error,

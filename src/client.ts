@@ -1,4 +1,4 @@
-import type { BomcpEnvelope } from "./bomcp/types.ts";
+import type { BomcpEnvelope } from "./events/types.ts";
 import type {
   ActiveExecutionResponse,
   CancelExecutionResponse,

@@ -1,8 +1,11 @@
-import { resolveDefaultExecutionTimeoutMs } from "../config/defaults.ts";
+import { DEFAULT_EXECUTION_TIMEOUT_MS, DEFAULT_HEARTBEAT_INTERVAL_MS } from "../config/defaults.ts";
 import type { NormalizedExecutionRequest } from "../types.ts";
 
 export const KNOWN_TOP_LEVEL_FIELDS = new Set([
   "backend",
+  "execution_id",
+  "inherit_host_config",
+  "system_prompt_mode",
   "execution_profile",
   "runtime",
   "task",
@@ -49,7 +52,14 @@ export function normalizeTimeoutMs(value: unknown): number {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) {
     return value;
   }
-  return resolveDefaultExecutionTimeoutMs();
+  return DEFAULT_EXECUTION_TIMEOUT_MS;
+}
+
+export function normalizeHeartbeatIntervalMs(value: unknown): number {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  return DEFAULT_HEARTBEAT_INTERVAL_MS;
 }
 
 export function applyResolvedAttachmentPaths(

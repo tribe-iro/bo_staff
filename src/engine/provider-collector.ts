@@ -1,9 +1,9 @@
-import type { BackendAdapter, ProviderTerminalResult, ProviderFailure } from "../adapters/types.ts";
+import type { CliAgentAdapter, ProviderTerminalResult, ProviderFailure } from "../adapters/types.ts";
 import type { ExecutionProfileOutcome, NormalizedExecutionRequest } from "../types.ts";
 import type { WorkspaceRuntime } from "./workspace-manager.ts";
 import type { PromptEnvelope } from "./prompt-envelope.ts";
 import type { ControllerStream } from "../bomcp/controller-stream.ts";
-import type { EphemeralExecutionState } from "../bomcp/types.ts";
+import type { EphemeralExecutionState } from "./types.ts";
 import { projectAdapterEvent } from "./event-projection.ts";
 
 export interface ProviderResult {
@@ -12,7 +12,7 @@ export interface ProviderResult {
 }
 
 export async function collectProviderResult(input: {
-  adapter: BackendAdapter;
+  adapter: CliAgentAdapter;
   executionId: string;
   requestId: string;
   request: NormalizedExecutionRequest;
@@ -63,6 +63,10 @@ export async function collectProviderResult(input: {
 
       case "provider.failed":
         result.failure = event.error;
+        break;
+
+      case "provider.artifact.upsert":
+        input.state.artifacts.set(event.artifact.artifact_id, event.artifact);
         break;
 
       default:

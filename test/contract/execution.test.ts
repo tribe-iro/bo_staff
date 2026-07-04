@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import { buildCodexExecArgs } from "../../src/adapters/codex/adapter.ts";
 import { buildClaudeExecArgs } from "../../src/adapters/claude/adapter.ts";
+import { REASONING_TIERS, type ReasoningTier } from "../../src/types.ts";
 import { createTestGateway, FakeAdapter } from "./fixtures.ts";
 
 const CODEX_PROFILE = { model: "gpt-5" } as const;
@@ -25,6 +26,95 @@ function flattenPrompt(input: {
   return [...input.system.sections, ...input.user.sections].map((section) => section.content).join("\n\n");
 }
 
+// Minimal adapter context for arg-building tests, parameterized by backend/model/tier.
+function makeContext(
+  backend: "claude" | "codex",
+  model: string,
+  tier: ReasoningTier | undefined,
+  runDir: string,
+): Parameters<typeof buildClaudeExecArgs>[0] {
+  return {
+    request_id: "req",
+    execution_id: "exec",
+    signal: new AbortController().signal,
+    request: {
+      backend,
+      inherit_host_config: false,
+      system_prompt_mode: "append",
+      execution_profile: { model, ...(tier ? { reasoning_effort: tier } : {}) },
+      runtime: { timeout_ms: 30_000, heartbeat_interval_ms: 15_000 },
+      task: { prompt: "p", context: {}, attachments: [], constraints: [] },
+      workspace: { kind: "provided", topology: "direct", source_root: "/tmp/project", scope: { mode: "full" } },
+      output: { format: "message", schema: MESSAGE_SCHEMA, schema_enforcement: "advisory" },
+      metadata: {},
+    },
+    execution_profile: { model, ...(tier ? { reasoning_effort: tier } : {}) },
+    workspace: {
+      topology: "direct",
+      source_root: "/tmp/project",
+      runtime_working_directory: "/tmp/project",
+      run_dir: runDir,
+      scope_status: "unbounded",
+    },
+    prompt: { system: { sections: [] }, user: { sections: [{ label: "task_prompt", content: "p" }], attachments: [] } },
+  };
+}
+
+// The seam contract (L-0301/0302): every bo_staff tier maps to a VALID native value on
+// BOTH backends. Asserting `--effort high` alone (the prior test) masked the broken tiers.
+const CLAUDE_EFFORT_BY_TIER: Record<ReasoningTier, string | undefined> = {
+  none: undefined,
+  light: "low",
+  standard: "medium",
+  deep: "high",
+};
+const CODEX_EFFORT_BY_TIER: Record<ReasoningTier, string> = {
+  none: "none",
+  light: "low",
+  standard: "medium",
+  deep: "high",
+};
+
+test("claude --effort maps every reasoning tier to a native value (none omits the flag)", async () => {
+  for (const tier of REASONING_TIERS) {
+    const args = await buildClaudeExecArgs(makeContext("claude", "claude-sonnet-4-6", tier, "/tmp/project/run"));
+    const idx = args.indexOf("--effort");
+    const expected = CLAUDE_EFFORT_BY_TIER[tier];
+    if (expected === undefined) {
+      assert.equal(idx, -1, `tier "${tier}" must omit --effort (Claude has no "none")`);
+    } else {
+      assert.equal(args[idx + 1], expected, `tier "${tier}" must map to --effort ${expected}`);
+    }
+  }
+});
+
+test("codex model_reasoning_effort maps every reasoning tier to a native value", async () => {
+  for (const tier of REASONING_TIERS) {
+    const args = await buildCodexExecArgs(makeContext("codex", "gpt-5.5", tier, "/tmp/project/run"), "/tmp/project/last.json");
+    const expected = CODEX_EFFORT_BY_TIER[tier];
+    assert.ok(
+      args.some((entry) => entry === `model_reasoning_effort=${JSON.stringify(expected)}`),
+      `tier "${tier}" must map to model_reasoning_effort=${JSON.stringify(expected)}`,
+    );
+  }
+});
+
+test("codex custom output schema is written to a file and passed via --output-schema", async () => {
+  const runDir = await mkdtemp(path.join(os.tmpdir(), "bo-staff-codex-schema-"));
+  try {
+    const ctx = makeContext("codex", "gpt-5.5", "standard", runDir);
+    ctx.request.output = { format: "custom", schema: MESSAGE_SCHEMA, schema_enforcement: "strict" };
+    const args = await buildCodexExecArgs(ctx, path.join(runDir, "last.json"));
+    assert.ok(!args.some((entry) => entry.includes("output_schema=")), "must NOT use the non-existent -c output_schema config key");
+    const idx = args.indexOf("--output-schema");
+    assert.notEqual(idx, -1, "must pass --output-schema <file>");
+    const written = JSON.parse(await readFile(args[idx + 1], "utf8")) as unknown;
+    assert.deepEqual(written, MESSAGE_SCHEMA);
+  } finally {
+    await rm(runDir, { recursive: true, force: true });
+  }
+});
+
 test("codex command args use stdin prompt transport and fully permissive provider flags", async () => {
   const args = await buildCodexExecArgs({
     request_id: "req",
@@ -32,12 +122,15 @@ test("codex command args use stdin prompt transport and fully permissive provide
     signal: new AbortController().signal,
     request: {
       backend: "codex",
+      inherit_host_config: false,
+      system_prompt_mode: "append",
       execution_profile: {
         model: "gpt-5",
-        reasoning_effort: "medium"
+        reasoning_effort: "standard"
       },
       runtime: {
-        timeout_ms: 30_000
+        timeout_ms: 30_000,
+        heartbeat_interval_ms: 15_000,
       },
       task: {
         prompt: "secret prompt",
@@ -60,7 +153,7 @@ test("codex command args use stdin prompt transport and fully permissive provide
     },
     execution_profile: {
       model: "gpt-5",
-      reasoning_effort: "medium"
+      reasoning_effort: "standard"
     },
     workspace: {
       topology: "direct",
@@ -84,6 +177,23 @@ test("codex command args use stdin prompt transport and fully permissive provide
   assert.ok(args.some((entry) => entry.includes("model_reasoning_effort=\"medium\"")));
   assert.ok(args.some((entry) => entry.includes('sandbox_mode="danger-full-access"')));
   assert.ok(args.some((entry) => entry.includes("approval_policy=\"never\"")));
+  assert.ok(args.includes("--ignore-user-config"), "hermetic-by-default ignores the host codex config");
+});
+
+test("claude passes --max-turns and inherit_host_config=true disables MCP isolation", async () => {
+  const runDir = await mkdtemp(path.join(os.tmpdir(), "bo-staff-claude-hermetic-"));
+  try {
+    const ctx = makeContext("claude", "claude-sonnet-4-6", "standard", runDir);
+    ctx.request.runtime = { ...ctx.request.runtime, max_turns: 3 };
+    ctx.request.inherit_host_config = true;
+    ctx.bomcp_server_config = { command: "node", args: ["/tmp/bomcp-server.js"], env: {} };
+    const args = await buildClaudeExecArgs(ctx);
+    assert.equal(args[args.indexOf("--max-turns") + 1], "3");
+    assert.ok(args.includes("--mcp-config"), "bomcp injection still writes an mcp config");
+    assert.ok(!args.includes("--strict-mcp-config"), "inherit_host_config=true keeps host MCP servers");
+  } finally {
+    await rm(runDir, { recursive: true, force: true });
+  }
 });
 
 test("codex command args inject MCP servers via config overrides", async () => {
@@ -93,12 +203,15 @@ test("codex command args inject MCP servers via config overrides", async () => {
     signal: new AbortController().signal,
     request: {
       backend: "codex",
+      inherit_host_config: false,
+      system_prompt_mode: "append",
       execution_profile: {
         model: "gpt-5",
-        reasoning_effort: "medium"
+        reasoning_effort: "standard"
       },
       runtime: {
-        timeout_ms: 30_000
+        timeout_ms: 30_000,
+        heartbeat_interval_ms: 15_000,
       },
       task: {
         prompt: "use mcp",
@@ -132,7 +245,7 @@ test("codex command args inject MCP servers via config overrides", async () => {
     },
     execution_profile: {
       model: "gpt-5",
-      reasoning_effort: "medium"
+      reasoning_effort: "standard"
     },
     workspace: {
       topology: "direct",
@@ -176,12 +289,15 @@ test("claude command args preserve model, reasoning, resume, schema, tool policy
       signal: new AbortController().signal,
       request: {
         backend: "claude",
+        inherit_host_config: false,
+        system_prompt_mode: "append",
         execution_profile: {
           model: "claude-sonnet-4-6",
-          reasoning_effort: "high"
+          reasoning_effort: "deep"
         },
         runtime: {
-          timeout_ms: 30_000
+          timeout_ms: 30_000,
+          heartbeat_interval_ms: 15_000,
         },
         task: {
           prompt: "use mcp",
@@ -218,7 +334,7 @@ test("claude command args preserve model, reasoning, resume, schema, tool policy
       },
       execution_profile: {
         model: "claude-sonnet-4-6",
-        reasoning_effort: "high"
+        reasoning_effort: "deep"
       },
       continuation: {
         backend: "claude",
@@ -245,13 +361,15 @@ test("claude command args preserve model, reasoning, resume, schema, tool policy
       }
     });
 
-    assert.deepEqual(args.slice(0, 6), [
+    assert.deepEqual(args.slice(0, 7), [
       "-p",
-      "--output-format", "json",
+      "--output-format", "stream-json",
+      "--verbose",
       "--permission-mode", "bypassPermissions",
       "--model"
     ]);
     assert.ok(args.includes("claude-sonnet-4-6"));
+    assert.ok(args.includes("--strict-mcp-config"), "hermetic-by-default restricts MCP to the injected set");
     assert.ok(args.includes("--effort"));
     assert.ok(args.includes("high"));
     assert.ok(args.includes("--resume"));

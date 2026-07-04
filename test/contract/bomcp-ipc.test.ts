@@ -240,6 +240,10 @@ test("IPC client rejects oversized response frames", async (t) => {
   const socketPath = tmpSocketPath();
   const server = net.createServer((conn) => {
     conn.setEncoding("utf8");
+    // The client correctly aborts the connection when it detects the oversized frame;
+    // the resulting ECONNRESET on this peer must be handled or it becomes an uncaught
+    // exception. (The production server — createIpcServer — already attaches this.)
+    conn.on("error", () => {});
     conn.once("data", () => {
       conn.write("x".repeat(300 * 1024));
     });
@@ -264,6 +268,13 @@ test("IPC client rejects oversized response frames", async (t) => {
 
   client.disconnect();
   await new Promise<void>((resolve) => server.close(() => resolve()));
+});
+
+test("IPC client connect rejects when no server is listening", async (t) => {
+  await requireUnixSocketSupport(t);
+  const socketPath = tmpSocketPath(); // nothing is bound here
+  const client = createIpcClient(socketPath);
+  await assert.rejects(() => client.connect(), /ENOENT|ECONNREFUSED/);
 });
 
 test("late responses after timeout do not corrupt later requests", async (t) => {

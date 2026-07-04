@@ -1,13 +1,29 @@
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { AdapterEvent, BackendAdapter } from "../types.ts";
+import { requireCliAgentDescriptor } from "../descriptors.ts";
+import type { AdapterEvent, CliAgentAdapter } from "../types.ts";
 import { CodexEventParser } from "./parser.ts";
 import { executeCliAdapter, renderCodexPrompt } from "../shared.ts";
-import type { McpServerSpec } from "../../types.ts";
+import type { McpServerSpec, ReasoningTier } from "../../types.ts";
 
-export class CodexAdapter implements BackendAdapter {
+const CODEX_DESCRIPTOR = requireCliAgentDescriptor("codex");
+
+// Total map from bo_staff's intent tiers to Codex's native `model_reasoning_effort`
+// vocabulary (none | minimal | low | medium | high | xhigh). Codex DOES have "none".
+// `minimal`/`xhigh` are vendor extremes deliberately outside the unified surface.
+// Exhaustive by construction: a missing tier is a compile error.
+const CODEX_EFFORT_BY_TIER: Record<ReasoningTier, string> = {
+  none: "none",
+  light: "low",
+  standard: "medium",
+  deep: "high",
+};
+
+export class CodexAdapter implements CliAgentAdapter {
   readonly backend = "codex" as const;
+  readonly capabilities = CODEX_DESCRIPTOR.capabilities;
 
-  async *execute(context: Parameters<BackendAdapter["execute"]>[0]): AsyncIterable<AdapterEvent> {
+  async *execute(context: Parameters<CliAgentAdapter["execute"]>[0]): AsyncIterable<AdapterEvent> {
     const renderedPrompt = await renderCodexPrompt(context);
     const outputPath = path.join(context.workspace.run_dir, "codex-last-message.json");
     const args = await buildCodexExecArgs(context, outputPath);
@@ -25,7 +41,7 @@ export class CodexAdapter implements BackendAdapter {
 }
 
 export async function buildCodexExecArgs(
-  context: Parameters<BackendAdapter["execute"]>[0],
+  context: Parameters<CliAgentAdapter["execute"]>[0],
   outputPath: string
 ): Promise<string[]> {
   const args = context.continuation?.token
@@ -47,8 +63,16 @@ export async function buildCodexExecArgs(
     "--output-last-message", outputPath,
     "--model", context.execution_profile.model
   );
-  if (context.execution_profile.reasoning_effort) {
-    args.push("-c", `model_reasoning_effort=${JSON.stringify(context.execution_profile.reasoning_effort)}`);
+
+  // Hermetic by default: ignore the host operator's $CODEX_HOME/config.toml so the run is
+  // reproducible and bo_staff owns the surface. Model/sandbox/MCP all come from the -c
+  // overrides above, so functionality is unaffected; only ambient user config is dropped.
+  if (!context.request.inherit_host_config) {
+    args.push("--ignore-user-config");
+  }
+  const reasoningTier = context.execution_profile.reasoning_effort;
+  if (reasoningTier) {
+    args.push("-c", `model_reasoning_effort=${JSON.stringify(CODEX_EFFORT_BY_TIER[reasoningTier])}`);
   }
 
   const hasCallerMcpServers = !!context.request.tool_configuration?.mcp_servers.length;
@@ -72,7 +96,12 @@ export async function buildCodexExecArgs(
   }
 
   if (context.request.output.format === "custom") {
-    args.push("-c", `output_schema=${JSON.stringify(JSON.stringify(context.request.output.schema))}`);
+    // Codex enforces a custom schema via the `--output-schema <FILE>` flag, NOT a config
+    // key — `-c output_schema=...` is silently ignored, so structured output never binds.
+    // Write the schema beside the other run artifacts (.mcp.json, codex-last-message.json).
+    const schemaPath = path.join(context.workspace.run_dir, "output-schema.json");
+    await writeFile(schemaPath, JSON.stringify(context.request.output.schema), "utf8");
+    args.push("--output-schema", schemaPath);
   }
 
   if (context.continuation?.token) {

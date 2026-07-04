@@ -6,7 +6,8 @@ import { TextDecoder } from "node:util";
 import type { IntegrationContext } from "../fixtures.ts";
 import { assertContains, assertEq, getPayloadRecord } from "../assertions.ts";
 import { buildRequest, type IntegrationAgent } from "./common.ts";
-import type { BomcpEnvelope } from "../../../bomcp/types.ts";
+import type { ExecutionRequest } from "../../../types.ts";
+import type { BomcpEnvelope } from "../../../events/types.ts";
 
 export async function runCancelMidflightScenario(
   context: IntegrationContext,
@@ -23,7 +24,7 @@ export async function runCancelMidflightScenario(
     },
   );
 
-  const { response, envelopes, requestPath } = await openStreamingExecution(
+  const { response } = await openStreamingExecution(
     context.baseUrl,
     request,
     path.join(context.runRoot, `${prefix}.request.json`),
@@ -173,7 +174,7 @@ export async function runAdmissionSaturationScenario(
 
 async function openStreamingExecution(
   baseUrl: string,
-  request: Record<string, unknown>,
+  request: ExecutionRequest,
   requestPath: string,
 ): Promise<{ response: Response }> {
   await writeFile(requestPath, `${JSON.stringify(request, null, 2)}\n`, "utf8");

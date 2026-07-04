@@ -6,6 +6,7 @@ import {
   readJsonBody,
   writeRejectedStream
 } from "../../src/http/handlers/executions.ts";
+import { normalizeLayeredRequest } from "../../src/api/normalize.ts";
 import { handleRun } from "../../src/http/handlers/run.ts";
 import { buildSyncResult } from "../../src/api/sync-response.ts";
 import { routeHttp } from "../../src/http/router.ts";
@@ -71,7 +72,7 @@ test("GET /health failures are contained as structured server errors", async () 
     request: { method: "GET", url: "/health" } as never,
     response: response as never,
     gateway: {
-      async health() {
+      health() {
         throw new Error("boom");
       }
     } as never,
@@ -108,9 +109,11 @@ test("GET /executions/:id returns live execution state", async () => {
 
   assert.equal(handled, true);
   assert.equal(response.statusCode, 200);
-  const body = JSON.parse(response.text()) as { execution_id: string; status: string };
+  const body = JSON.parse(response.text()) as { execution_id: string; status: string; elapsed_ms: number };
   assert.equal(body.execution_id, "exec_1");
   assert.equal(body.status, "running");
+  assert.equal(typeof body.elapsed_ms, "number");
+  assert.ok(body.elapsed_ms >= 0);
 });
 
 test("GET /executions/:id returns 404 for inactive execution", async () => {
@@ -182,10 +185,18 @@ test("removed operator endpoints are not routed", async () => {
 test("handleRun reuses the pre-normalized request instead of calling gateway.execute(raw)", async () => {
   const response = new MockResponse();
   let executeNormalizedCalled = false;
+  const prepared = await normalizeLayeredRequest({ prompt: "fix the tests" });
+  assert.equal(prepared.ok, true);
+  if (!prepared.ok) {
+    throw new Error("expected normalized request");
+  }
 
   await handleRun(
     response as never,
     {
+      async prepareExecution() {
+        return prepared;
+      },
       async execute() {
         throw new Error("handleRun should not call gateway.execute after pre-normalizing");
       },

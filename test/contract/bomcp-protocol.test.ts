@@ -8,7 +8,8 @@ import { LeaseValidator, buildLease } from "../../src/bomcp/lease.ts";
 import { ControllerStream } from "../../src/bomcp/controller-stream.ts";
 import { BomcpToolHandler } from "../../src/bomcp/tool-handler.ts";
 import { BOMCP_TOOL_NAMES } from "../../src/bomcp/types.ts";
-import type { BomcpEnvelope, EphemeralExecutionState } from "../../src/bomcp/types.ts";
+import type { BomcpEnvelope } from "../../src/events/types.ts";
+import type { EphemeralExecutionState } from "../../src/engine/types.ts";
 
 test("EnvelopeBuilder assigns monotonic sequences", () => {
   const builder = new EnvelopeBuilder("exec_1");

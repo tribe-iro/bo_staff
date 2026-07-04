@@ -1,8 +1,6 @@
 export const ERROR_CODES = [
   "validation_failed",
   "unknown_backend",
-  "invalid_limit",
-  "invalid_cursor",
   "gateway_busy",
   "gateway_draining",
   "provider_process_error",
@@ -40,8 +38,6 @@ export const ERROR_CODE_DEFINITIONS: Record<ErrorCode, {
 }> = {
   validation_failed: { category: "admission", default_retryable: false },
   unknown_backend: { category: "admission", default_retryable: false },
-  invalid_limit: { category: "admission", default_retryable: false },
-  invalid_cursor: { category: "admission", default_retryable: false },
   gateway_busy: { category: "admission", default_retryable: true },
   gateway_draining: { category: "admission", default_retryable: true },
   provider_process_error: { category: "provider", default_retryable: true },

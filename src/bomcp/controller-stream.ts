@@ -1,4 +1,4 @@
-import type { BomcpEnvelope, BomcpMessageKind, BomcpSender } from "./types.ts";
+import type { BomcpEnvelope, BomcpMessageKind, BomcpSender } from "../events/types.ts";
 import { EnvelopeBuilder, RUNTIME_SENDER } from "./envelope-builder.ts";
 
 export type StreamWriter = (envelope: BomcpEnvelope) => Promise<void>;

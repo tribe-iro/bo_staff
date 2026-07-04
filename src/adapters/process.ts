@@ -41,7 +41,12 @@ export async function* streamCommand(input: {
   const child = spawn(command, args, {
     cwd,
     env: { ...process.env, ...env },
-    stdio: ["pipe", "pipe", "pipe"]
+    stdio: ["pipe", "pipe", "pipe"],
+    // Run the CLI in its own process group so cancellation / timeout signals reach the
+    // children it forks (MCP servers, model-driven `bash`, sandbox helpers), not just the
+    // direct child — otherwise "cancelled" runs leave live grandchildren mutating the
+    // workspace. Unix-only, consistent with bo_staff's Unix-domain-socket requirement.
+    detached: true
   });
 
   const stdout = createAccumulator("stdout");
@@ -73,9 +78,9 @@ export async function* streamCommand(input: {
     if (terminationReason === "exited") {
       terminationReason = reason;
     }
-    child.kill("SIGTERM");
+    signalProcessGroup(child, "SIGTERM");
     sigkillTimer = setTimeout(() => {
-      child.kill("SIGKILL");
+      signalProcessGroup(child, "SIGKILL");
     }, SIGTERM_GRACE_MS);
   };
 
@@ -278,6 +283,26 @@ function createAccumulator(stream: OutputStreamName): StreamAccumulator {
     text: "",
     bytes: 0
   };
+}
+
+function signalProcessGroup(child: ReturnType<typeof spawn>, signal: NodeJS.Signals): void {
+  const pid = child.pid;
+  // With detached:true the child is a process-group leader (pgid === pid); a negative
+  // pid signals the whole group. Fall back to the direct child if the group is already
+  // gone (ESRCH), and swallow races where the child has exited between check and signal.
+  if (typeof pid === "number" && pid > 1) {
+    try {
+      process.kill(-pid, signal);
+      return;
+    } catch {
+      /* group already exited — fall through to a best-effort direct kill */
+    }
+  }
+  try {
+    child.kill(signal);
+  } catch {
+    /* already exited */
+  }
 }
 
 function findUtf8SafePrefixLength(buffer: Buffer, maxBytes: number): number {

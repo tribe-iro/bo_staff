@@ -1,8 +1,8 @@
 import type { ServerResponse } from "node:http";
-import type { BomcpEnvelope } from "../../bomcp/types.ts";
+import type { BomcpEnvelope } from "../../events/types.ts";
 import type { StreamWriter } from "../../bomcp/controller-stream.ts";
 import { reportInternalError } from "../../internal-reporting.ts";
-import { nowIso } from "../../utils.ts";
+import { buildRuntimeErrorEnvelope } from "../../runtime/error-envelope.ts";
 import { beginNdjson, endNdjson, writeNdjson } from "./ndjson.ts";
 
 export async function streamExecutionNdjson(input: {
@@ -34,17 +34,10 @@ export async function streamExecutionNdjson(input: {
     });
   } catch (error) {
     if (!input.response.destroyed && !input.response.writableEnded) {
-      await writeNdjson(input.response, {
-        message_id: `err_${Date.now()}`,
-        kind: "system.error",
-        sequence: 0,
-        timestamp: nowIso(),
-        sender: { type: "runtime", id: "runtime" },
-        payload: {
-          code: "runtime_error",
-          message: error instanceof Error ? error.message : String(error),
-        },
-      }).catch((streamError) => {
+      await writeNdjson(input.response, buildRuntimeErrorEnvelope({
+        code: "runtime_error",
+        message: error instanceof Error ? error.message : String(error),
+      })).catch((streamError) => {
         reportInternalError(`${input.errorLogKey}.write_failure_event`, streamError, {
           request_id: input.requestId,
         });

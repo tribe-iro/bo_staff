@@ -1,11 +1,11 @@
 import type { ServerResponse } from "node:http";
 import type { BoStaff } from "../../gateway.ts";
-import type { BomcpEnvelope } from "../../bomcp/types.ts";
+import type { BomcpEnvelope } from "../../events/types.ts";
 import type { LayeredNormalizeResult } from "../../api/normalize.ts";
-import { normalizeLayeredRequest } from "../../api/normalize.ts";
 import { buildSyncResult } from "../../api/sync-response.ts";
+import { buildRuntimeErrorEnvelope } from "../../runtime/error-envelope.ts";
 import { streamExecutionNdjson } from "../streaming/execution-stream.ts";
-import { nowIso } from "../../utils.ts";
+import { formatValidationIssueSummary } from "../../validation/summary.ts";
 
 export async function handleRun(
   response: ServerResponse,
@@ -13,16 +13,14 @@ export async function handleRun(
   rawBody: unknown,
   requestId: string,
 ): Promise<void> {
-  // Pre-check: detect stream/verbose flags from the raw request before gateway.execute()
-  // normalizes it. We need these to decide sync vs streaming response format.
-  const preNormalized = await normalizeLayeredRequest(rawBody);
+  const preNormalized = await gateway.prepareExecution(rawBody);
 
   if (!preNormalized.ok) {
     response.writeHead(400, { "content-type": "application/json", "x-request-id": requestId });
     response.end(JSON.stringify({
       error: {
         code: "validation_failed",
-        message: preNormalized.issues.map((i) => i.message).join("; "),
+        message: formatValidationIssueSummary(preNormalized.issues),
         issues: preNormalized.issues,
       },
     }, null, 2));
@@ -57,15 +55,10 @@ async function handleSyncRun(
       signal: abortController.signal,
     });
   } catch (err) {
-    // If execution threw, add a synthetic error envelope
-    envelopes.push({
-      message_id: `err_${Date.now()}`,
-      kind: "system.error",
-      sequence: envelopes.length + 1,
-      timestamp: nowIso(),
-      sender: { type: "runtime", id: "runtime" },
-      payload: { code: "runtime_error", message: err instanceof Error ? err.message : String(err) },
-    });
+    envelopes.push(buildRuntimeErrorEnvelope(
+      { code: "runtime_error", message: err instanceof Error ? err.message : String(err) },
+      { sequence: envelopes.length + 1 },
+    ));
   }
 
   const result = buildSyncResult(envelopes, { verbose: normalized.verbose });

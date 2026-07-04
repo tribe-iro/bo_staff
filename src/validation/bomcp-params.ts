@@ -6,8 +6,8 @@ import type {
   HandoffInputRequest,
   HandoffTarget,
   ProgressUpdateParams,
-} from "./types.ts";
-import { BOMCP_HANDOFF_KINDS } from "./types.ts";
+} from "../bomcp/types.ts";
+import { BOMCP_HANDOFF_KINDS } from "../bomcp/types.ts";
 import { isPlainObject } from "../utils.ts";
 
 export class ToolParameterError extends Error {
@@ -87,7 +87,10 @@ function optionalHandoffTarget(value: unknown): HandoffTarget | undefined {
   if (node_id === undefined && prompt_id === undefined) {
     throw new ToolParameterError("next must include node_id or prompt_id");
   }
-  return { node_id, prompt_id };
+  return {
+    ...(node_id !== undefined ? { node_id } : {}),
+    ...(prompt_id !== undefined ? { prompt_id } : {}),
+  };
 }
 
 function optionalInputRequest(value: unknown): HandoffInputRequest | undefined {

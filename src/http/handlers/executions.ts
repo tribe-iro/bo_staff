@@ -2,10 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { TextDecoder } from "node:util";
 import type { BoStaff } from "../../gateway.ts";
 import type { ActiveExecutionResponse, CancelExecutionResponse } from "../../types.ts";
+import { buildRuntimeErrorEnvelope } from "../../runtime/error-envelope.ts";
 import { beginNdjson, endNdjson, writeNdjson } from "../streaming/ndjson.ts";
 import { streamExecutionNdjson } from "../streaming/execution-stream.ts";
 import { HttpRequestError, writeNotFound } from "../errors.ts";
-import { nowIso } from "../../utils.ts";
 
 export async function handleExecuteStream(
   response: ServerResponse,
@@ -45,7 +45,9 @@ export async function handleGetExecution(
     status: state.status,
     backend: state.backend,
     started_at: state.started_at,
+    elapsed_ms: Date.now() - new Date(state.started_at).getTime(),
     artifacts: [...state.artifacts.values()],
+    ...(state.progress ? { progress: state.progress } : {}),
   };
   response.end(JSON.stringify(body, null, 2));
 }
@@ -109,16 +111,6 @@ export async function writeRejectedStream(
   input: { code: string; message: string },
 ): Promise<void> {
   beginNdjson(response, requestId);
-  await writeNdjson(response, {
-    message_id: `rej_${Date.now()}`,
-    kind: "system.error",
-    sequence: 1,
-    timestamp: nowIso(),
-    sender: { type: "runtime", id: "runtime" },
-    payload: {
-      code: input.code,
-      message: input.message,
-    },
-  });
+  await writeNdjson(response, buildRuntimeErrorEnvelope(input, { sequence: 1 }));
   await endNdjson(response);
 }

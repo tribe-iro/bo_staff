@@ -385,6 +385,27 @@ test("rejects invalid SSE MCP server URLs", async () => {
   assert.match(result.issues.map((issue) => `${issue.path} ${issue.message}`).join("; "), /\$\.tool_configuration\.mcp_servers\[0\]\.url .*valid URL/);
 });
 
+test("rejects builtin tool policy modes that the selected CLI agent does not support", async () => {
+  const result = await normalizeAndValidateRequest({
+    backend: "codex",
+    execution_profile: CODEX_PROFILE,
+    task: { prompt: "x" },
+    tool_configuration: {
+      builtin_policy: {
+        mode: "allowlist",
+        tools: ["shell"],
+      },
+    },
+    output: { schema: { type: "object" } },
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(
+    result.issues.map((issue) => `${issue.path} ${issue.message}`).join("; "),
+    /\$\.tool_configuration\.builtin_policy\.mode .*codex only supports builtin_policy\.mode=default/,
+  );
+});
+
 test("validation does not mutate normalized attachment paths in place", async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "bo-staff-validation-no-mutate-"));
   const attachmentPath = path.join(workspaceRoot, "note.txt");

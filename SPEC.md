@@ -42,6 +42,8 @@ Its job is not to:
 - apply or discard repository changes
 - provide durable persistence after process exit
 - orchestrate multi-agent workflows
+- expose a generic model-serving or inference-router abstraction
+- normalize raw non-CLI model APIs into the same contract as local CLI agents
 
 ## Runtime Model
 

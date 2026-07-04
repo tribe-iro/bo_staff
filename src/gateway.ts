@@ -1,9 +1,11 @@
 import { normalizeLayeredRequest } from "./api/normalize.ts";
 import { ExecutionManager } from "./engine/execution-manager.ts";
-import type { BomcpEnvelope } from "./bomcp/types.ts";
+import type { BomcpEnvelope } from "./events/types.ts";
 import type { StreamWriter } from "./bomcp/controller-stream.ts";
 import type { HealthResponse, NormalizedExecutionRequest } from "./types.ts";
+import { buildRuntimeErrorEnvelope } from "./runtime/error-envelope.ts";
 import { generateHandle } from "./utils.ts";
+import { formatValidationIssueSummary } from "./validation/summary.ts";
 
 export class BoStaff {
   private readonly executionManager: ExecutionManager;
@@ -17,21 +19,14 @@ export class BoStaff {
     streamWriter: StreamWriter;
     signal: AbortSignal;
   }): Promise<void> {
-    const normalized = await normalizeLayeredRequest(input.rawRequest);
+    const normalized = await this.prepareExecution(input.rawRequest);
 
     if (!normalized.ok) {
-      const envelope: BomcpEnvelope = {
-        message_id: generateHandle("msg"),
-        kind: "system.error",
-        sequence: 1,
-        timestamp: new Date().toISOString(),
-        sender: { type: "runtime", id: "runtime" },
-        payload: {
-          code: "validation_failed",
-          message: normalized.issues.map((e) => e.message).join("; "),
-          issues: normalized.issues,
-        },
-      };
+      const envelope: BomcpEnvelope = buildRuntimeErrorEnvelope({
+        code: "validation_failed",
+        message: formatValidationIssueSummary(normalized.issues),
+        issues: normalized.issues,
+      }, { message_id: generateHandle("msg"), sequence: 1 });
       await input.streamWriter(envelope);
       return;
     }
@@ -42,6 +37,10 @@ export class BoStaff {
       streamWriter: input.streamWriter,
       signal: input.signal,
     });
+  }
+
+  async prepareExecution(rawRequest: unknown) {
+    return normalizeLayeredRequest(rawRequest);
   }
 
   async executeNormalized(input: {
@@ -68,8 +67,8 @@ export class BoStaff {
     return this.executionManager.getActiveExecution(executionId);
   }
 
-  async health(): Promise<HealthResponse> {
-    return { status: "ok" };
+  health(): HealthResponse {
+    return this.executionManager.healthCheck();
   }
 
   async shutdown(): Promise<void> {

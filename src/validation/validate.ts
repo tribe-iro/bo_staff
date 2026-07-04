@@ -1,6 +1,8 @@
 import path from "node:path";
 import { access, stat } from "node:fs/promises";
 import { constants } from "node:fs";
+import { getCliAgentDescriptor } from "../adapters/descriptors.ts";
+import { MAX_ATTACHMENT_CONTENT_BYTES, MAX_TOTAL_INLINE_BYTES } from "../config/defaults.ts";
 import { validateSchemaShape } from "../schema/validator.ts";
 import { asRecord, isPlainObject } from "../utils.ts";
 import {
@@ -20,9 +22,12 @@ import {
   MCP_TRANSPORTS,
   OUTPUT_FORMATS,
   OUTPUT_SCHEMA_ENFORCEMENTS,
+  REASONING_TIERS,
+  SYSTEM_PROMPT_MODES,
   TOOL_POLICY_MODES
 } from "../types.ts";
 import { BOMCP_TOOL_NAMES } from "../bomcp/types.ts";
+import { isSafeExecutionId } from "../core/identifiers.ts";
 import {
   isOneOf,
   isValidMimeType,
@@ -52,6 +57,17 @@ export async function validateRequest(
 
   if (!isOneOf(request.backend, BACKEND_NAMES)) {
     issues.push({ path: "$.backend", message: `must be one of ${BACKEND_NAMES.join(" or ")}` });
+  }
+  if ("execution_id" in rawRecord && rawRecord.execution_id !== undefined) {
+    if (typeof rawRecord.execution_id !== "string" || !isSafeExecutionId(rawRecord.execution_id)) {
+      issues.push({ path: "$.execution_id", message: "must be a safe opaque id (alphanumerics, '.', '_', '-'; no '..')" });
+    }
+  }
+  if ("inherit_host_config" in rawRecord && rawRecord.inherit_host_config !== undefined && typeof rawRecord.inherit_host_config !== "boolean") {
+    issues.push({ path: "$.inherit_host_config", message: "must be a boolean when provided" });
+  }
+  if ("system_prompt_mode" in rawRecord && rawRecord.system_prompt_mode !== undefined && !isOneOf(rawRecord.system_prompt_mode, SYSTEM_PROMPT_MODES)) {
+    issues.push({ path: "$.system_prompt_mode", message: `must be one of ${SYSTEM_PROMPT_MODES.join(" or ")} when provided` });
   }
   if (!rawExecutionProfile) {
     issues.push({ path: "$.execution_profile", message: "must be an object" });
@@ -100,6 +116,17 @@ export async function validateRequest(
   }
   if (!request.execution_profile.model.trim()) {
     issues.push({ path: "$.execution_profile.model", message: "must be a non-empty string" });
+  }
+  if (
+    rawExecutionProfile
+    && "reasoning_effort" in rawExecutionProfile
+    && rawExecutionProfile.reasoning_effort !== undefined
+    && !isOneOf(rawExecutionProfile.reasoning_effort, REASONING_TIERS)
+  ) {
+    issues.push({
+      path: "$.execution_profile.reasoning_effort",
+      message: `must be one of ${REASONING_TIERS.join(", ")} when provided`,
+    });
   }
   if (!request.task.prompt.trim()) {
     issues.push({ path: "$.task.prompt", message: "must be a non-empty string" });
@@ -217,6 +244,7 @@ export async function validateRequest(
     }
   }
   validateContinuation(request, rawContinuation, issues);
+  validateCliAgentCompatibility(request, issues);
   if (rawRuntime && "timeout_ms" in rawRuntime) {
     const rawTimeoutMs = rawRuntime.timeout_ms;
     if (typeof rawTimeoutMs !== "number" || !Number.isInteger(rawTimeoutMs) || rawTimeoutMs <= 0) {
@@ -227,6 +255,12 @@ export async function validateRequest(
     const rawMaxTurns = rawRuntime.max_turns;
     if (typeof rawMaxTurns !== "number" || !Number.isInteger(rawMaxTurns) || rawMaxTurns <= 0) {
       issues.push({ path: "$.runtime.max_turns", message: "must be a positive integer when provided" });
+    }
+  }
+  if (rawRuntime && "heartbeat_interval_ms" in rawRuntime) {
+    const rawHeartbeatMs = rawRuntime.heartbeat_interval_ms;
+    if (typeof rawHeartbeatMs !== "number" || !Number.isInteger(rawHeartbeatMs) || rawHeartbeatMs <= 0) {
+      issues.push({ path: "$.runtime.heartbeat_interval_ms", message: "must be a positive integer when provided" });
     }
   }
   if (rawPolicy && "isolation" in rawPolicy) {
@@ -313,6 +347,27 @@ export async function validateRequest(
     }
   }
 
+  let totalInlineBytes = 0;
+  for (const [index, attachment] of request.task.attachments.entries()) {
+    if (attachment.kind !== "inline") {
+      continue;
+    }
+    const contentBytes = Buffer.byteLength(attachment.content, "utf8");
+    if (contentBytes > MAX_ATTACHMENT_CONTENT_BYTES) {
+      issues.push({
+        path: `$.task.attachments[${index}].content`,
+        message: `inline content exceeds the ${MAX_ATTACHMENT_CONTENT_BYTES}-byte per-attachment limit`,
+      });
+    }
+    totalInlineBytes += contentBytes;
+  }
+  if (totalInlineBytes > MAX_TOTAL_INLINE_BYTES) {
+    issues.push({
+      path: "$.task.attachments",
+      message: `total inline attachment content exceeds the ${MAX_TOTAL_INLINE_BYTES}-byte aggregate limit`,
+    });
+  }
+
   for (const [index, attachment] of request.task.attachments.entries()) {
     if (attachment.kind === "path") {
       if (request.workspace.kind !== "provided") {
@@ -345,6 +400,48 @@ export async function validateRequest(
     }
   }
   return { issues, resolvedAttachmentPaths };
+}
+
+function validateCliAgentCompatibility(
+  request: NormalizedExecutionRequest,
+  issues: ValidationIssue[],
+): void {
+  const descriptor = getCliAgentDescriptor(request.backend);
+  if (!descriptor) {
+    return;
+  }
+
+  if (request.continuation && !descriptor.capabilities.continuation) {
+    issues.push({
+      path: "$.continuation",
+      message: `${request.backend} does not support continuation`,
+    });
+  }
+
+  if ((request.tool_configuration?.mcp_servers.length ?? 0) > 0 && !descriptor.capabilities.mcp_injection) {
+    issues.push({
+      path: "$.tool_configuration.mcp_servers",
+      message: `${request.backend} does not support caller-supplied MCP servers`,
+    });
+  }
+
+  const builtinMode = request.tool_configuration?.builtin_policy.mode;
+  if (
+    builtinMode
+    && !descriptor.capabilities.builtin_tool_policy_modes.includes(builtinMode)
+  ) {
+    issues.push({
+      path: "$.tool_configuration.builtin_policy.mode",
+      message: `${request.backend} only supports builtin_policy.mode=${descriptor.capabilities.builtin_tool_policy_modes.join(" or ")}`,
+    });
+  }
+
+  if (request.output.format === "custom" && !descriptor.capabilities.custom_output_schema) {
+    issues.push({
+      path: "$.output.format",
+      message: `${request.backend} does not support caller-defined custom output schemas`,
+    });
+  }
 }
 
 function validateMcpServer(value: unknown, index: number, issues: ValidationIssue[]): void {

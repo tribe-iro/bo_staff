@@ -1,5 +1,4 @@
-import { CodexAdapter } from "./adapters/codex/adapter.ts";
-import { ClaudeAdapter } from "./adapters/claude/adapter.ts";
+import { createSupportedCliAgentAdapters } from "./adapters/supported.ts";
 import { ExecutionManager } from "./engine/execution-manager.ts";
 import { BoStaff } from "./gateway.ts";
 import { DEFAULT_MAX_CONCURRENT_EXECUTIONS } from "./config/defaults.ts";
@@ -11,7 +10,7 @@ export interface CreateBoStaffOptions {
 
 export async function createBoStaff(options: CreateBoStaffOptions): Promise<BoStaff> {
   const executionManager = new ExecutionManager({
-    adapters: [new CodexAdapter(), new ClaudeAdapter()],
+    adapters: createSupportedCliAgentAdapters(),
     dataDir: options.dataDir,
     maxConcurrentExecutions: options.maxConcurrentExecutions ?? DEFAULT_MAX_CONCURRENT_EXECUTIONS,
   });

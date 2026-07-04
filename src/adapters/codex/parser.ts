@@ -1,18 +1,15 @@
 import { readFile } from "node:fs/promises";
-import { asRecord, isPlainObject } from "../../utils.ts";
-import {
-  canonicalizeProviderResultText
-} from "../shared.ts";
+import { asRecord } from "../../utils.ts";
 import {
   type AdapterEvent,
-  type AdapterExecutionContext,
   type AdapterExecutionSummary,
   type ProviderEventParser
 } from "../types.ts";
 import type { UsageSummary } from "../../types.ts";
+import { NdjsonLineBuffer, parseJsonObject, parseJsonObjectLines } from "../ndjson.ts";
 
 export class CodexEventParser implements ProviderEventParser {
-  private buffer = "";
+  private readonly lines = new NdjsonLineBuffer();
   private readonly finalMessagePath: string;
   private turnCount = 0;
 
@@ -29,11 +26,10 @@ export class CodexEventParser implements ProviderEventParser {
   }
 
   async finish(input: {
-    context: AdapterExecutionContext;
     stdout: string;
     stderr: string;
   }): Promise<AdapterExecutionSummary> {
-    const streamEvents = parseJsonLines(input.stdout);
+    const streamEvents = parseJsonObjectLines(input.stdout);
     let rawOutput = "";
     try {
       rawOutput = await readFile(this.finalMessagePath, "utf8");
@@ -46,10 +42,6 @@ export class CodexEventParser implements ProviderEventParser {
       rawOutput = typeof item?.text === "string" ? item.text : "";
     }
 
-    const canonicalOutput = canonicalizeProviderResultText({
-      context: input.context,
-      raw_text: rawOutput
-    });
     const usageEvent = [...streamEvents].reverse().find((entry) => entry.type === "turn.completed");
     const usageRecord = asRecord(usageEvent?.usage);
     const usage: UsageSummary | undefined = usageRecord
@@ -57,29 +49,17 @@ export class CodexEventParser implements ProviderEventParser {
         duration_ms: typeof usageRecord.duration_ms === "number" ? usageRecord.duration_ms : undefined,
         input_tokens: typeof usageRecord.input_tokens === "number" ? usageRecord.input_tokens : undefined,
         output_tokens: typeof usageRecord.output_tokens === "number" ? usageRecord.output_tokens : undefined,
+        cache_read_tokens: typeof usageRecord.cached_input_tokens === "number" ? usageRecord.cached_input_tokens : undefined,
         turns: this.turnCount || undefined
       }
       : undefined;
 
     const threadStarted = streamEvents.find((entry) => entry.type === "thread.started");
-    const mcpRequested = input.context.request.tool_configuration?.mcp_servers.length ?? 0;
-    const builtinMode = input.context.request.tool_configuration?.builtin_policy?.mode ?? "default";
 
     return {
-      continuation: typeof threadStarted?.thread_id === "string"
-        ? { backend: "codex", token: threadStarted.thread_id }
-        : input.context.continuation,
-      raw_output_text: canonicalOutput,
+      continuation_token: typeof threadStarted?.thread_id === "string" ? threadStarted.thread_id : undefined,
+      raw_output_text: rawOutput,
       usage,
-      schema_enforcement_applied: false,
-      tool_configuration_outcome: {
-        builtin_policy_honored: builtinMode === "default",
-        mcp_servers_requested: mcpRequested,
-        mcp_servers_active: 0,
-        failed_mcp_servers: mcpRequested > 0
-          ? (input.context.request.tool_configuration?.mcp_servers.map((server) => server.name) ?? [])
-          : undefined
-      },
       debug: {
         provider_result_text: rawOutput,
         stdout: input.stdout,
@@ -89,17 +69,11 @@ export class CodexEventParser implements ProviderEventParser {
   }
 
   private processText(chunk: string): AdapterEvent[] {
-    this.buffer += chunk;
-    const lines = this.buffer.split("\n");
-    this.buffer = lines.pop() ?? "";
-    return lines.flatMap((line) => this.processLine(line.trim()));
+    return this.lines.push(chunk).flatMap((line) => this.processLine(line));
   }
 
   private processLine(line: string): AdapterEvent[] {
-    if (!line) {
-      return [];
-    }
-    const record = parseJsonLine(line);
+    const record = parseJsonObject(line);
     if (!record) {
       return [];
     }
@@ -160,26 +134,6 @@ export class CodexEventParser implements ProviderEventParser {
   }
 }
 
-function parseJsonLines(raw: string): Array<Record<string, unknown>> {
-  return raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith("{"))
-    .flatMap((line) => {
-      const parsed = parseJsonLine(line);
-      return parsed ? [parsed] : [];
-    });
-}
-
-function parseJsonLine(line: string): Record<string, unknown> | undefined {
-  try {
-    const parsed = JSON.parse(line) as unknown;
-    return isPlainObject(parsed) ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function extractUsage(record: Record<string, unknown>): Partial<UsageSummary> | undefined {
   const usage = asRecord(record.usage);
   if (!usage) {
@@ -188,7 +142,8 @@ function extractUsage(record: Record<string, unknown>): Partial<UsageSummary> | 
   const summary: Partial<UsageSummary> = {
     duration_ms: typeof usage.duration_ms === "number" ? usage.duration_ms : undefined,
     input_tokens: typeof usage.input_tokens === "number" ? usage.input_tokens : undefined,
-    output_tokens: typeof usage.output_tokens === "number" ? usage.output_tokens : undefined
+    output_tokens: typeof usage.output_tokens === "number" ? usage.output_tokens : undefined,
+    cache_read_tokens: typeof usage.cached_input_tokens === "number" ? usage.cached_input_tokens : undefined
   };
   return Object.values(summary).some((value) => value !== undefined) ? summary : undefined;
 }

@@ -1,13 +1,16 @@
 import { DEFAULT_MAX_CONCURRENT_EXECUTIONS } from "../config/defaults.ts";
 import { RequestResolutionError } from "../errors.ts";
-import type { BackendName, ExecutionProfileOutcome, NormalizedExecutionRequest } from "../types.ts";
-import type { BackendAdapter } from "../adapters/types.ts";
+import type { BackendName, ExecutionProfileOutcome, HealthResponse, HealthStatus, NormalizedExecutionRequest, UsageSummary } from "../types.ts";
+import type { ErrorCategory, ErrorCode } from "../errors/taxonomy.ts";
+import type { CliAgentAdapter } from "../adapters/types.ts";
 import type { WorkspaceRuntime } from "./workspace-manager.ts";
 import type { PromptEnvelope } from "./prompt-envelope.ts";
-import type { EphemeralExecutionState, ExecutionLease } from "../bomcp/types.ts";
+import type { ExecutionLease } from "../core/lease.ts";
+import type { EphemeralExecutionState } from "./types.ts";
+import type { ExecutionStatus } from "../core/execution.ts";
 import { EnvelopeBuilder } from "../bomcp/envelope-builder.ts";
 import { ControllerStream, type StreamWriter } from "../bomcp/controller-stream.ts";
-import { buildLease } from "../bomcp/lease.ts";
+import { buildLease, LeaseValidator } from "../bomcp/lease.ts";
 import { BomcpToolHandler } from "../bomcp/tool-handler.ts";
 import { createIpcServer, type IpcServer } from "../bomcp/ipc-channel.ts";
 import { createEphemeralState } from "./execution-state.ts";
@@ -20,7 +23,19 @@ import { finalizeExecution } from "./execution-finalization.ts";
 import * as path from "node:path";
 import { reportInternalError } from "../internal-reporting.ts";
 
-const HEARTBEAT_INTERVAL_MS = 15_000;
+export interface ExecutionAuditRecord {
+  _type: "execution.audit";
+  timestamp: string;
+  execution_id: string;
+  request_id: string;
+  backend: string;
+  status: ExecutionStatus;
+  duration_ms: number;
+  usage?: UsageSummary;
+  error?: { code: ErrorCode; category: ErrorCategory };
+}
+
+import { DEFAULT_HEARTBEAT_INTERVAL_MS } from "../config/defaults.ts";
 
 interface ActiveExecution {
   state: EphemeralExecutionState;
@@ -31,20 +46,26 @@ interface ActiveExecution {
 }
 
 export class ExecutionManager {
-  private readonly adapters: Map<BackendName, BackendAdapter>;
+  private readonly adapters: Map<BackendName, CliAgentAdapter>;
   private readonly workspaceManager: WorkspaceManager;
   private readonly admission: ExecutionAdmissionController;
   private readonly activeExecutions = new Map<string, ActiveExecution>();
+  // Synchronously-held reservation set for caller-supplied execution ids, so two concurrent
+  // requests with the same idempotency key can't both pass the dedup check before either
+  // registers in activeExecutions (at-most-once).
+  private readonly reservedExecutionIds = new Set<string>();
   private readonly dataDir: string;
 
   constructor(input: {
-    adapters: BackendAdapter[];
+    adapters: CliAgentAdapter[];
     dataDir: string;
     maxConcurrentExecutions?: number;
+    workspaceManager?: WorkspaceManager;
+    admissionController?: ExecutionAdmissionController;
   }) {
     this.adapters = new Map(input.adapters.map((a) => [a.backend, a]));
-    this.workspaceManager = new WorkspaceManager(input.dataDir);
-    this.admission = new ExecutionAdmissionController(
+    this.workspaceManager = input.workspaceManager ?? new WorkspaceManager(input.dataDir);
+    this.admission = input.admissionController ?? new ExecutionAdmissionController(
       input.maxConcurrentExecutions ?? DEFAULT_MAX_CONCURRENT_EXECUTIONS,
     );
     this.dataDir = input.dataDir;
@@ -57,7 +78,9 @@ export class ExecutionManager {
     streamWriter: StreamWriter;
     signal: AbortSignal;
   }): Promise<void> {
-    const executionId = generateHandle("exec");
+    // Caller-supplied execution_id is an idempotency key + cancellation handle the caller
+    // already knows (fixes sync-cancel: no need to wait for the buffered response to learn it).
+    const executionId = input.request.execution_id ?? generateHandle("exec");
     const lease = buildLease({
       executionId,
       allowedTools: input.lease?.allowed_tools,
@@ -67,20 +90,34 @@ export class ExecutionManager {
     const envelopeBuilder = new EnvelopeBuilder(executionId);
     const stream = new ControllerStream(input.streamWriter, envelopeBuilder);
 
+    // At-most-once: reject a duplicate id that's already in flight. The check + reserve are
+    // synchronous (no await between), so concurrent same-key requests can't both pass.
+    if (this.activeExecutions.has(executionId) || this.reservedExecutionIds.has(executionId)) {
+      await stream.emitRuntime("system.error", {
+        code: "validation_failed",
+        message: `execution_id "${executionId}" is already in flight`,
+      });
+      return;
+    }
+    this.reservedExecutionIds.add(executionId);
+
     // Admission
     if (!this.admission.tryAcquire()) {
       await stream.emitRuntime("system.error", {
         code: this.admission.isDraining() ? "gateway_draining" : "gateway_busy",
         message: "bo_staff cannot accept new executions right now.",
       });
+      this.reservedExecutionIds.delete(executionId);
       return;
     }
 
     try {
       await this.executeInner(input, executionId, lease, state, stream);
     } finally {
+      this.emitAuditRecord(state, input.requestId);
       await this.teardown(executionId);
       this.admission.release();
+      this.reservedExecutionIds.delete(executionId);
     }
   }
 
@@ -99,7 +136,7 @@ export class ExecutionManager {
     let executionProfile: ExecutionProfileOutcome;
     let workspace: WorkspaceRuntime | undefined;
     let prompt: PromptEnvelope;
-    let adapter: BackendAdapter;
+    let adapter: CliAgentAdapter;
 
     try {
       executionProfile = resolveExecutionProfile(input.request);
@@ -114,7 +151,7 @@ export class ExecutionManager {
     } catch (err) {
       const msg = err instanceof RequestResolutionError ? err.message : String(err);
       await stream.emitRuntime("system.error", {
-        code: err instanceof RequestResolutionError ? err.code : "internal",
+        code: err instanceof RequestResolutionError ? err.code : "internal_error",
         message: msg,
       });
       await stream.emitRuntime("execution.failed", {
@@ -167,11 +204,12 @@ export class ExecutionManager {
     }
 
     // Start heartbeat
+    const heartbeatIntervalMs = input.request.runtime.heartbeat_interval_ms ?? DEFAULT_HEARTBEAT_INTERVAL_MS;
     active.heartbeatTimer = setInterval(() => {
       stream.emitRuntime("progress.heartbeat", {}).catch((err) => {
         reportInternalError("execution.heartbeat.emit", err, { execution_id: executionId });
       });
-    }, HEARTBEAT_INTERVAL_MS);
+    }, heartbeatIntervalMs);
 
     // Lease expiry timer
     let leaseTimer: ReturnType<typeof setTimeout> | undefined;
@@ -223,8 +261,11 @@ export class ExecutionManager {
     } catch (err) {
       providerResult = {
         failure: {
-          message: String(err),
-          retryable: false,
+          command: adapter.backend,
+          reason: "aborted",
+          exit_code: null,
+          stdout: "",
+          stderr: String(err),
         },
       };
     } finally {
@@ -276,6 +317,32 @@ export class ExecutionManager {
     return this.activeExecutions.get(executionId)?.state;
   }
 
+  healthCheck(): HealthResponse {
+    const load = this.admission.currentLoad();
+    let status: HealthStatus = "accepting";
+    if (load.draining) {
+      status = "degraded";
+    } else if (load.active >= load.max) {
+      status = "saturated";
+    } else {
+      for (const active of this.activeExecutions.values()) {
+        const validator = new LeaseValidator(active.state.lease);
+        if (validator.isExpired()) {
+          status = "degraded";
+          break;
+        }
+      }
+    }
+    return {
+      status,
+      executions: {
+        active: load.active,
+        max: load.max,
+        draining: load.draining,
+      },
+    };
+  }
+
   async shutdown(): Promise<void> {
     for (const [id, active] of this.activeExecutions) {
       active.abortController.abort("gateway_shutdown");
@@ -296,6 +363,24 @@ export class ExecutionManager {
     }
     active.stream.close();
     this.activeExecutions.delete(executionId);
+  }
+
+  private emitAuditRecord(state: EphemeralExecutionState, requestId: string): void {
+    const durationMs = Date.now() - new Date(state.started_at).getTime();
+    const record: ExecutionAuditRecord = {
+      _type: "execution.audit",
+      timestamp: new Date().toISOString(),
+      execution_id: state.execution_id,
+      request_id: requestId,
+      backend: state.backend,
+      status: state.status,
+      duration_ms: durationMs,
+    };
+    try {
+      process.stderr.write(JSON.stringify(record) + "\n");
+    } catch {
+      // best-effort — stderr may be closed
+    }
   }
 
   private async cleanupWorkspace(workspace: WorkspaceRuntime): Promise<void> {

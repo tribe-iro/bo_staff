@@ -33,9 +33,9 @@ export async function runCodexScenarios(context: IntegrationContext): Promise<vo
   await runNamedScenario(context, "codex.profile.fast.none", () =>
     runManagedProfile(context, "codex", project(context, "codex-read"), "fast", undefined, "gpt-5.3-codex-spark", "codex-profile-fast-none"));
   await runNamedScenario(context, "codex.profile.high.deep", () =>
-    runManagedProfile(context, "codex", project(context, "codex-read"), "high", "high", "gpt-5.4", "codex-profile-high-deep"));
+    runManagedProfile(context, "codex", project(context, "codex-read"), "high", "deep", "gpt-5.4", "codex-profile-high-deep"));
   await runNamedScenario(context, "codex.profile.pinned", () =>
-    runPinnedProfile(context, "codex", project(context, "codex-read"), "balanced", "medium", "gpt-5-codex", "codex-profile-pinned"));
+    runPinnedProfile(context, "codex", project(context, "codex-read"), "balanced", "standard", "gpt-5-codex", "codex-profile-pinned"));
   await runNamedScenario(context, "codex.profile.override", () =>
     runOverrideModel(context, "codex", project(context, "codex-read"), "gpt-5.4", "codex-profile-override"));
   await runNamedScenario(context, "codex.output.structured", () =>
@@ -93,9 +93,9 @@ export async function runClaudeScenarios(context: IntegrationContext): Promise<v
   await runNamedScenario(context, "claude.profile.fast.none", () =>
     runManagedProfile(context, "claude", project(context, "claude-read"), "fast", undefined, "claude-sonnet-4-6", "claude-profile-fast-none"));
   await runNamedScenario(context, "claude.profile.high.deep", () =>
-    runManagedProfile(context, "claude", project(context, "claude-read"), "high", "high", "claude-opus-4-6", "claude-profile-high-deep"));
+    runManagedProfile(context, "claude", project(context, "claude-read"), "high", "deep", "claude-opus-4-6", "claude-profile-high-deep"));
   await runNamedScenario(context, "claude.profile.pinned", () =>
-    runPinnedProfile(context, "claude", project(context, "claude-read"), "balanced", "medium", "claude-sonnet-4-6", "claude-profile-pinned"));
+    runPinnedProfile(context, "claude", project(context, "claude-read"), "balanced", "standard", "claude-sonnet-4-6", "claude-profile-pinned"));
   await runNamedScenario(context, "claude.profile.override", () =>
     runOverrideModel(context, "claude", project(context, "claude-read"), "claude-opus-4-6", "claude-profile-override"));
   await runNamedScenario(context, "claude.output.structured", () =>

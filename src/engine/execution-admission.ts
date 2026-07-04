@@ -41,6 +41,10 @@ export class ExecutionAdmissionController {
     await this.drainPromise;
   }
 
+  currentLoad(): { active: number; max: number; draining: boolean } {
+    return { active: this.inFlight, max: this.maxConcurrent, draining: this.draining };
+  }
+
   isDraining(): boolean {
     return this.draining;
   }

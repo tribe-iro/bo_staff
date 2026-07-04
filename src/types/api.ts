@@ -1,14 +1,13 @@
 import type {
   ArtifactRecord,
+  ExecutionStatus,
   WorkspaceScopeStatus
 } from "../core/index.ts";
-import type { ExecutionStatus } from "../bomcp/types.ts";
 import type { ErrorCategory, ErrorCode } from "../errors/taxonomy.ts";
 import type { JsonSchema, ValidationIssue } from "./schema.ts";
 
-// Re-export bomcp types as canonical event/envelope types
-export type { BomcpMessageKind as BoStaffEventName } from "../bomcp/types.ts";
-export type { BomcpEnvelope as BoStaffEvent } from "../bomcp/types.ts";
+export type { BomcpMessageKind as BoStaffEventName } from "../events/types.ts";
+export type { BomcpEnvelope as BoStaffEvent } from "../events/types.ts";
 
 export const API_VERSION = "v0.2" as const;
 export const BACKEND_NAMES = ["codex", "claude"] as const;
@@ -17,6 +16,17 @@ export const OUTPUT_FORMATS = ["message", "custom"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 export const OUTPUT_SCHEMA_ENFORCEMENTS = ["strict", "advisory"] as const;
 export type OutputSchemaEnforcement = (typeof OUTPUT_SCHEMA_ENFORCEMENTS)[number];
+// bo_staff's intent-level reasoning scale. Deliberately NOT a vendor effort word —
+// each adapter owns the total mapping onto its CLI's native effort vocabulary
+// (Claude `--effort`, Codex `model_reasoning_effort`), which differ. One unified
+// surface over both backends is the whole point; leaking vendor vocab defeats it.
+export const REASONING_TIERS = ["none", "light", "standard", "deep"] as const;
+export type ReasoningTier = (typeof REASONING_TIERS)[number];
+// How bo_staff's system-prompt text combines with the backend's own. `append` keeps the
+// provider's default identity/tool/safety guidance and adds caller context (the safe default);
+// `replace` swaps the entire prompt (non-coding pipelines that own their own surface).
+export const SYSTEM_PROMPT_MODES = ["append", "replace"] as const;
+export type SystemPromptMode = (typeof SYSTEM_PROMPT_MODES)[number];
 export const TOOL_POLICY_MODES = ["default", "allowlist", "denylist"] as const;
 export type ToolPolicyMode = (typeof TOOL_POLICY_MODES)[number];
 export const MCP_TRANSPORTS = ["stdio", "sse"] as const;
@@ -37,6 +47,8 @@ export interface UsageSummary {
   duration_ms?: number;
   input_tokens?: number;
   output_tokens?: number;
+  cache_read_tokens?: number;
+  cache_creation_tokens?: number;
   turns?: number;
 }
 
@@ -117,13 +129,24 @@ export interface ExecutionRequestWorkspace {
 
 export interface ExecutionRequest {
   backend: BackendName;
+  // Optional caller-supplied idempotency key / cancellation handle. When set, the caller
+  // already knows the id and can cancel a sync run without waiting for the response; a
+  // duplicate in-flight id is rejected (at-most-once). A valid UUID is also fed to the
+  // backend as a deterministic session id where supported.
+  execution_id?: string;
+  // When false (default), bo_staff isolates the run from the host operator's ambient CLI
+  // config (MCP discovery / user config). Set true to inherit it.
+  inherit_host_config?: boolean;
+  // How the system prompt combines with the backend's default. Default `append`.
+  system_prompt_mode?: SystemPromptMode;
   execution_profile: {
     model: string;
-    reasoning_effort?: string;
+    reasoning_effort?: ReasoningTier;
   };
   runtime?: {
     timeout_ms?: number;
     max_turns?: number;
+    heartbeat_interval_ms?: number;
   };
   task: {
     prompt: string;
@@ -149,13 +172,17 @@ export interface ExecutionRequest {
 
 export interface NormalizedExecutionRequest {
   backend: BackendName;
+  execution_id?: string;
+  inherit_host_config: boolean;
+  system_prompt_mode: SystemPromptMode;
   execution_profile: {
     model: string;
-    reasoning_effort?: string;
+    reasoning_effort?: ReasoningTier;
   };
   runtime: {
     timeout_ms: number;
     max_turns?: number;
+    heartbeat_interval_ms: number;
   };
   task: {
     prompt: string;
@@ -195,22 +222,19 @@ export interface NormalizedExecutionRequest {
 
 export interface ExecutionProfileOutcome {
   model: string;
-  reasoning_effort?: string;
+  reasoning_effort?: ReasoningTier;
 }
 
-export interface ActiveExecutionArtifact {
-  artifact_id: string;
-  kind: string;
-  path: string;
-  metadata?: Record<string, unknown>;
-}
+export interface ActiveExecutionArtifact extends ArtifactRecord {}
 
 export interface ActiveExecutionResponse {
   execution_id: string;
   status: ExecutionStatus;
   backend: string;
   started_at: string;
+  elapsed_ms: number;
   artifacts: ActiveExecutionArtifact[];
+  progress?: ExecutionProgressProjection;
 }
 
 export interface CancelExecutionResponse {
@@ -218,8 +242,15 @@ export interface CancelExecutionResponse {
   execution_id: string;
 }
 
+export type HealthStatus = "accepting" | "saturated" | "degraded";
+
 export interface HealthResponse {
-  status: "ok";
+  status: HealthStatus;
+  executions: {
+    active: number;
+    max: number;
+    draining: boolean;
+  };
 }
 
 export interface WorkspaceSummary {

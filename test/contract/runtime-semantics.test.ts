@@ -73,36 +73,3 @@ test("runCommand accepts stdin text for prompt transport", async () => {
 
   assert.equal(result.stdout, "hello from stdin");
 });
-
-async function initGitRepo(root: string): Promise<void> {
-  await runCommand({
-    command: "git",
-    args: ["init"],
-    cwd: root,
-    timeoutMs: 10_000
-  });
-  await runCommand({
-    command: "git",
-    args: ["config", "user.email", "test@example.com"],
-    cwd: root,
-    timeoutMs: 10_000
-  });
-  await runCommand({
-    command: "git",
-    args: ["config", "user.name", "bo_staff tests"],
-    cwd: root,
-    timeoutMs: 10_000
-  });
-  await runCommand({
-    command: "git",
-    args: ["add", "."],
-    cwd: root,
-    timeoutMs: 10_000
-  });
-  await runCommand({
-    command: "git",
-    args: ["commit", "-m", "init"],
-    cwd: root,
-    timeoutMs: 10_000
-  });
-}

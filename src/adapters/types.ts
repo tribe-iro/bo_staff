@@ -2,15 +2,13 @@ import type {
   ArtifactRecord,
   BackendName,
   ContinuationReference,
-  ExecutionError,
   ExecutionProfileOutcome,
   ExecutionProgressProjection,
   NormalizedExecutionRequest,
-  ToolConfigurationOutcome,
+  ToolPolicyMode,
   UsageSummary
 } from "../types.ts";
 import type { PromptEnvelope } from "../engine/prompt-envelope.ts";
-import type { ErrorCode } from "../errors/taxonomy.ts";
 import type { WorkspaceRuntime } from "../engine/workspace-manager.ts";
 
 export interface RenderedPrompt {
@@ -34,22 +32,32 @@ export interface AdapterExecutionContext {
   };
 }
 
+export interface CliAgentCapabilityContract {
+  cwd_control: true;
+  event_streaming: true;
+  structured_output_normalization: "engine";
+  cancellation: true;
+  continuation: boolean;
+  mcp_injection: boolean;
+  custom_output_schema: boolean;
+  builtin_tool_policy_modes: readonly ToolPolicyMode[];
+}
+
 export interface ProviderTerminalResult {
   continuation?: ContinuationReference;
   raw_output_text?: string;
   usage?: UsageSummary;
-  schema_enforcement_applied?: boolean;
-  tool_configuration_outcome?: ToolConfigurationOutcome;
   exit_reason: "completed" | "failed" | "killed" | "timed_out";
   debug?: Record<string, unknown>;
 }
 
 export interface ProviderFailure {
-  message: string;
-  retryable?: boolean;
-  kind?: ErrorCode;
-  debug?: Record<string, unknown>;
-  details?: Record<string, unknown>;
+  command: string;
+  reason: "exited" | "timed_out" | "stdout_overflow" | "stderr_overflow" | "aborted";
+  exit_code: number | null;
+  stdout: string;
+  stderr: string;
+  interrupted_by?: string;
 }
 
 export type AdapterEvent =
@@ -62,17 +70,16 @@ export type AdapterEvent =
   | { type: "provider.completed"; result: ProviderTerminalResult }
   | { type: "provider.failed"; error: ProviderFailure };
 
-export interface BackendAdapter {
+export interface CliAgentAdapter {
   readonly backend: BackendName;
+  readonly capabilities: CliAgentCapabilityContract;
   execute(context: AdapterExecutionContext): AsyncIterable<AdapterEvent>;
 }
 
 export interface AdapterExecutionSummary {
-  continuation?: ContinuationReference;
+  continuation_token?: string;
   raw_output_text?: string;
   usage?: UsageSummary;
-  schema_enforcement_applied?: boolean;
-  tool_configuration_outcome?: ToolConfigurationOutcome;
   debug?: Record<string, unknown>;
 }
 
@@ -80,7 +87,6 @@ export interface ProviderEventParser {
   onStdoutChunk(text: string): AdapterEvent[];
   onStderrChunk(text: string): AdapterEvent[];
   finish(input: {
-    context: AdapterExecutionContext;
     stdout: string;
     stderr: string;
   }): Promise<AdapterExecutionSummary> | AdapterExecutionSummary;

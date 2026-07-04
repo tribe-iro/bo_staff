@@ -9,7 +9,7 @@ import {
   getPayloadRecord,
 } from "../assertions.ts";
 import { buildRequest, type IntegrationAgent } from "./common.ts";
-import type { BomcpEnvelope } from "../../../bomcp/types.ts";
+import type { BomcpEnvelope } from "../../../events/types.ts";
 
 // ---------------------------------------------------------------------------
 // Scenario: Agent calls bomcp.progress.update during execution

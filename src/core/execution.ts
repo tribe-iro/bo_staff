@@ -1,7 +1,9 @@
-// Re-export the canonical ExecutionStatus from bomcp/types.ts
-export type { ExecutionStatus } from "../bomcp/types.ts";
-
-import type { ExecutionStatus } from "../bomcp/types.ts";
+export type ExecutionStatus =
+  | "accepted"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
 export const EXECUTION_STATUSES: readonly ExecutionStatus[] = [
   "accepted",

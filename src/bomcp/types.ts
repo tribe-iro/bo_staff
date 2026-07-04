@@ -1,56 +1,3 @@
-// BO-MCP type foundation — single source of truth for all protocol types.
-
-// ---------------------------------------------------------------------------
-// Message envelope
-// ---------------------------------------------------------------------------
-
-export interface BomcpSender {
-  type: "agent" | "runtime";
-  id: string;
-}
-
-export interface BomcpEnvelope<P = unknown> {
-  message_id: string;
-  execution_id?: string;
-  kind: BomcpMessageKind;
-  sequence: number;
-  timestamp: string;
-  sender: BomcpSender;
-  request_id?: string;
-  correlation_id?: string;
-  reply_to?: string;
-  payload: P;
-}
-
-// ---------------------------------------------------------------------------
-// Message kinds — exhaustive union
-// ---------------------------------------------------------------------------
-
-export type BomcpMessageKind =
-  // Control
-  | "control.handoff"
-  // Artifact
-  | "artifact.register"
-  | "artifact.registered"
-  | "artifact.registration_rejected"
-  | "artifact.require"
-  | "artifact.available"
-  | "artifact.missing"
-  | "artifact.superseded"
-  // Progress
-  | "progress.update"
-  | "progress.heartbeat"
-  | "progress.chunk"
-  | "progress.usage"
-  // Execution lifecycle
-  | "execution.started"
-  | "execution.completed"
-  | "execution.failed"
-  | "execution.cancelled"
-  // System
-  | "system.error"
-  | "system.lease_expired";
-
 // ---------------------------------------------------------------------------
 // Agent-facing tool parameter types
 // ---------------------------------------------------------------------------
@@ -139,43 +86,6 @@ export const BOMCP_TOOL_NAMES = [
 ] as const;
 
 export type BomcpToolName = (typeof BOMCP_TOOL_NAMES)[number];
-
-export interface ExecutionLease {
-  execution_id: string;
-  allowed_tools: readonly string[];
-  timeout_seconds?: number;
-  issued_at: string;
-  expires_at?: string;
-}
-
-export interface MaterializationPlanEntry {
-  change: "add" | "modify" | "delete" | "rename" | "type_change";
-  path: string;
-  previous_path?: string;
-  digest?: string;
-}
-
-// ---------------------------------------------------------------------------
-// Ephemeral execution state
-// ---------------------------------------------------------------------------
-
-export type ExecutionStatus =
-  | "accepted"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
-
-export interface EphemeralExecutionState {
-  execution_id: string;
-  backend: string;
-  agent_id?: string;
-  status: ExecutionStatus;
-  lease: ExecutionLease;
-  artifacts: Map<string, { artifact_id: string; kind: string; path: string; metadata?: Record<string, unknown> }>;
-  processed_request_ids: Map<string, unknown>; // request_id -> cached response
-  started_at: string;
-}
 
 // ---------------------------------------------------------------------------
 // IPC protocol (bomcp-server <-> execution manager)
