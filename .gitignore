@@ -1,30 +1,11 @@
-# Dependencies
+# Installed dependencies and local tool state
 node_modules/
+/.claude/
 
-# Local tool state
-.claude/
-
-# Environment files
+# Local environment files
 .env
 .env.*
 !.env.example
 
-# Logs
-*.log
-npm-debug.log*
-
-# Build and coverage artifacts
-dist/
-coverage/
-*.tsbuildinfo
-
-# OS/editor noise
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Temp files
-tmp/
-.tmp/
-*.tmp
+# Live conformance recordings (replay fixtures live under test/fixtures/)
+/test/transcripts/

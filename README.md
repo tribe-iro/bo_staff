@@ -234,3 +234,4 @@ BO_ALLOW_SUBSCRIPTION_AUTH=1 npm run conformance
 The integration and conformance suites use the real installed Claude Code and Codex CLIs, real models, real sandboxes, and operator authentication.
 
 The commands above explicitly opt in to subscription authentication for test runs; use them only with an account and setup for which that use is permitted.
+Conformance writes live recordings to the ignored `test/transcripts/` directory. Committed replay fixtures in `test/fixtures/transcripts/` keep `npm test` independent of live credentials and fail if either engine's fixtures are missing. Review recordings before copying any into the committed fixtures.

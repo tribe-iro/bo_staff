@@ -1,5 +1,5 @@
-// Golden replay: every recorded transcript under test/transcripts/<engine>/<C>.jsonl must still translate to
-// the committed <C>.ops.json and <C>.outcome.json. Recorded by `npm run conformance`.
+// Golden replay: every committed transcript under test/fixtures/transcripts/<engine>/<C>.jsonl must still
+// translate to the committed <C>.ops.json and <C>.outcome.json.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -11,11 +11,12 @@ import { replayTranscript } from "./replay.ts";
 import { createTranscriptRecorder } from "./tap.ts";
 import { tmpdir } from "./helpers.ts";
 
-const ROOT = path.join(import.meta.dirname, "transcripts");
+const ROOT = path.join(import.meta.dirname, "fixtures", "transcripts");
 
 for (const engine of ENGINE_IDS) {
   const dir = path.join(ROOT, engine);
   const names = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".jsonl")).map((f) => f.slice(0, -6)) : [];
+  assert.ok(names.length > 0, `missing replay fixtures for ${engine}`);
   for (const name of names) {
     const ops = path.join(dir, `${name}.ops.json`);
     if (!existsSync(ops)) continue;

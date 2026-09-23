@@ -1,5 +1,6 @@
 // Live conformance suite: runs scenarios C1–C23 through the real adapters, records native transcripts via the
-// tap, writes translator goldens next to them, and prints PASS/FAIL per scenario.
+// tap under ignored test/transcripts/, writes translator results next to them, and prints PASS/FAIL per scenario.
+// Review recordings before copying any into the committed replay fixtures under test/fixtures/transcripts/.
 //
 //   node scripts/conformance.ts [claude-code|codex] [C#…]
 //
