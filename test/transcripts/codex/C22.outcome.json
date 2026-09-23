@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "DATA-OK-3"
+  },
+  "usage": {
+    "input_tokens": 11681,
+    "output_tokens": 9,
+    "cached_input_tokens": 9344
+  }
+}

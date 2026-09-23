@@ -1,0 +1,82 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e"}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"userMessage","id":"01a0cc0e-0b3c-7740-8a84-b23a4ce2614a"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"userMessage","id":"01a0cc0e-0b3c-7740-8a84-b23a4ce2614a"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"reasoning","id":"rs_06766ea498d53d1b016ab336ccf10487d2bbcac6d4e711d641","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"reasoning","id":"rs_06766ea498d53d1b016ab336ccf10487d2bbcac6d4e711d641","summary":["**Checking write access**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"agentMessage","id":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" create"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"b"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" with"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"ok"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" check"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" its"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":" contents"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"agentMessage","id":"msg_06766ea498d53d1b016ab336d052b487d28edc08f5a4409569","text":"I’ll create `b.txt` with `ok` and check its contents."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"fileChange","id":"exec-45c7e151-424c-4cc3-a483-c04bb3439634","status":"inProgress","changes":[{"path":"/tmp/bo-scratch-xmUEKv/repo/b.txt","kind":{"type":"add"}}]}}}
+{"method":"thread/status/changed","params":{}}
+{"method":"serverRequest/resolved","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"fileChange","id":"exec-45c7e151-424c-4cc3-a483-c04bb3439634","status":"completed","changes":[{"path":"/tmp/bo-scratch-xmUEKv/repo/b.txt","kind":{"type":"add"}}]}}}
+{"method":"turn/diff/updated","params":{}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","tokenUsage":{"total":{"inputTokens":13670,"outputTokens":91,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":28}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"turn/diff/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"reasoning","id":"rs_06766ea498d53d1b016ab336d1744487d2a82657bc597d1203","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"reasoning","id":"rs_06766ea498d53d1b016ab336d1744487d2a82657bc597d1203","summary":["**Verifying**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"commandExecution","id":"exec-82646df3-dc8d-4f02-b70b-963ae4531426","status":"inProgress","command":"/usr/bin/bash -lc 'cat b.txt'","exitCode":null,"aggregatedOutput":null}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"commandExecution","id":"exec-82646df3-dc8d-4f02-b70b-963ae4531426","status":"completed","command":"/usr/bin/bash -lc 'cat b.txt'","exitCode":0,"aggregatedOutput":"ok\n"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","tokenUsage":{"total":{"inputTokens":27455,"outputTokens":144,"cachedInputTokens":22784,"cacheWriteInputTokens":0,"reasoningOutputTokens":35}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"turn/diff/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"agentMessage","id":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"Created"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":" ["}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"b"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"]"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"(/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"tmp"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"bo"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"-s"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"cratch"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"-x"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"m"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"UE"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"Kv"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"/re"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"po"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"/b"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":")"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":" containing"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"ok"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","delta":"`."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","item":{"type":"agentMessage","id":"msg_06766ea498d53d1b016ab336d5948087d2b6d6971dcdd67a5f","text":"Created [b.txt](/tmp/bo-scratch-xmUEKv/repo/b.txt) containing `ok`."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","tokenUsage":{"total":{"inputTokens":41351,"outputTokens":172,"cachedInputTokens":22784,"cacheWriteInputTokens":0,"reasoningOutputTokens":35}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"turn/diff/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0e-04ed-7e22-b91e-bc77c507a30e","turn":{"id":"01a0cc0e-0535-7f13-9c51-dc922b9c9d88","status":"completed"}}}

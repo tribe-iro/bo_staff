@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "Created [b.txt](/tmp/bo-scratch-xmUEKv/repo/b.txt) containing `ok`."
+  },
+  "usage": {
+    "input_tokens": 41351,
+    "output_tokens": 172,
+    "cached_input_tokens": 22784
+  }
+}

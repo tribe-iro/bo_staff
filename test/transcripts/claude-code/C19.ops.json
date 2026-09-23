@@ -1,0 +1,45 @@
+[
+  {
+    "op": "session",
+    "native": "157d7283-166c-495d-8cbc-0b2247e05478"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZpD5kVH18g8GQeJJvE:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZpD5kVH18g8GQeJJvE:0",
+    "text": "Red"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZpD5kVH18g8GQeJJvE:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "Red"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

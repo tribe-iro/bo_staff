@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "Hi!"
+  },
+  "usage": {
+    "input_tokens": 38008,
+    "output_tokens": 22,
+    "cached_input_tokens": 30464
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "I said: \"Hi! How can I help you today?\"\n\nAlso, the Canva, Gmail, Google Calendar and Google Drive connectors need to be authorized before I can use them. You can do that in your claude.ai connector settings."
+  },
+  "usage": {
+    "input_tokens": 41891,
+    "output_tokens": 201,
+    "cached_input_tokens": 25067,
+    "cost_usd": 0.1436094
+  }
+}

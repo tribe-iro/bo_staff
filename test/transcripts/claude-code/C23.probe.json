@@ -1,0 +1,5 @@
+{
+  "authentication": "subscription",
+  "available": false,
+  "reason": "authenticated with a subscription login; set an API key or cloud provider credentials, or BO_ALLOW_SUBSCRIPTION_AUTH=1 for personal single-user use"
+}

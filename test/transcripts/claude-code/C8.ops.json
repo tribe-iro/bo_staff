@@ -1,0 +1,135 @@
+[
+  {
+    "op": "session",
+    "native": "95476081-d854-4095-b507-0e29e30ab7f8"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01UnvTCPQFerfSR1vNFLwr7d",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-t6J3h8/repo/b.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01UnvTCPQFerfSR1vNFLwr7d",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-t6J3h8/repo/b.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "File created successfully at: /tmp/bo-scratch-t6J3h8/repo/b.txt (file state is current in your context — no need to Read it back)"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:0",
+    "body": {
+      "type": "reasoning",
+      "text": "I should keep it brief and just note that the user needs to know these servers require authentication.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": "I created `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": "b.txt` with the content"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " `ok`.\n\nThe"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " Canva, Gmail,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " Google Calendar and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " Google Drive connectors can"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": "'t be used until you authorize"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " them in your claude.ai"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": " connector settings. This task did"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "text": "n't need them."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhbrXqeC5fKrLrKyva:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I created `b.txt` with the content `ok`.\n\nThe Canva, Gmail, Google Calendar and Google Drive connectors can't be used until you authorize them in your claude.ai connector settings. This task didn't need them."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

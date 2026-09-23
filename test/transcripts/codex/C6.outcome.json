@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "Created [inside.txt](/tmp/bo-scratch-vDXnjc/repo/inside.txt) containing `ok`. Both commands targeting the parent directory failed because it is read-only, so `../outside.txt` and `../outside2.txt` were not created."
+  },
+  "usage": {
+    "input_tokens": 47503,
+    "output_tokens": 267,
+    "cached_input_tokens": 44288
+  }
+}

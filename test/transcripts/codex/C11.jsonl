@@ -1,0 +1,49 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46"}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"userMessage","id":"01a0cc0e-7f65-7a80-aab3-548b7f8aa91e"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"userMessage","id":"01a0cc0e-7f65-7a80-aab3-548b7f8aa91e"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"reasoning","id":"rs_000791c950bbf807016ab336eaadbc87d2a0305f6a3a80451f","summary":[],"content":[]}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"reasoning","id":"rs_000791c950bbf807016ab336eaadbc87d2a0305f6a3a80451f","summary":[],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"agentMessage","id":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" run"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" one"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" shell"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" command"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" per"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" number"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":","}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" in"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":" order"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"agentMessage","id":"msg_000791c950bbf807016ab336ee0b8c87d291ec0c0f2b11c78e","text":"I’ll run one shell command per number, in order."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"commandExecution","id":"exec-ac9c33ae-c5ca-43e2-8419-d06113eb3ed7","status":"inProgress","command":"/usr/bin/bash -lc 'sleep 2 && echo 1'","exitCode":null,"aggregatedOutput":null}}}
+{"method":"item/commandExecution/outputDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"commandExecution","id":"exec-ac9c33ae-c5ca-43e2-8419-d06113eb3ed7","status":"completed","command":"/usr/bin/bash -lc 'sleep 2 && echo 1'","exitCode":0,"aggregatedOutput":"1\n"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","tokenUsage":{"total":{"inputTokens":11682,"outputTokens":111,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":51}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"userMessage","id":"01a0cc0e-9a72-72a1-b7a0-7dcda48a5a4c"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"userMessage","id":"01a0cc0e-9a72-72a1-b7a0-7dcda48a5a4c"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"reasoning","id":"rs_000791c950bbf807016ab336f19df487d29038f2ba0313ac28","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"reasoning","id":"rs_000791c950bbf807016ab336f19df487d29038f2ba0313ac28","summary":["**Stopping after completion**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"agentMessage","id":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","delta":"Stopped"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","delta":" after"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","delta":" "}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","delta":"1"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","item":{"type":"agentMessage","id":"msg_000791c950bbf807016ab336f37df487d2a4ee4aa7d58fd877","text":"Stopped after 1."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","tokenUsage":{"total":{"inputTokens":23516,"outputTokens":134,"cachedInputTokens":20864,"cacheWriteInputTokens":0,"reasoningOutputTokens":63}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0e-78df-7322-89ec-1c7b4d795b46","turn":{"id":"01a0cc0e-790f-7f21-b2fa-f66a0bda2c19","status":"completed"}}}

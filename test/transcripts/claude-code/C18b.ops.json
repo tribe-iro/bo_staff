@@ -1,0 +1,205 @@
+[
+  {
+    "op": "session",
+    "native": "fc1a9f54-cc5a-4f75-a158-91117d57ca94"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01GqTLrvGrriTQYHNDQFzQtr",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "curl -sI https://example.com"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01GqTLrvGrriTQYHNDQFzQtr",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "curl -sI https://example.com"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "HTTP/1.1 200 Connection Established\r\n\r\nHTTP/2 200 \r\ndate: Wed, 23 Sep 2026 02:16:20 GMT\r\ncontent-type: text/html\r\nserver: cloudflare\r\nlast-modified: Tue, 22 Sep 2026 21:15:25 GMT\r\nallow: GET, HEAD\r\naccept-ranges: bytes\r\nage: 3039\r\ncf-cache-status: HIT\r\ncf-ray: a3f60bfb0feff1ab-GRU"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:0",
+    "body": {
+      "type": "reasoning",
+      "text": "That first line was just the proxy's CONNECT response — the actual result is HTTP/2 200, so I should report that. I'll also briefly note the MCP servers need authorization, since that's marginally relevant.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "The H"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "TTP status line is **`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "HTTP/2 200"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "`**."
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " example"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": ".com returned 200 O"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "K, served from"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " Cloudflare's c"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "ache (`cf-cache"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "-status: HIT`)."
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "\n\nThe output"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " also starts with `HTT"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "P/1.1 200 "
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "Connection Established`. That"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " line comes from this"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " session's network proxy op"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "ening the tunnel, not"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " from example.com.\n\nSepar"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "ately, the Canva,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " Gmail, Google Cal"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "endar and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " Google Drive connectors"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " can"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": "'t be used until you authorize"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " them in your claude.ai"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "text": " connector settings."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZosmf2pAzdAL3n1Bpn:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "The HTTP status line is **`HTTP/2 200`**. example.com returned 200 OK, served from Cloudflare's cache (`cf-cache-status: HIT`).\n\nThe output also starts with `HTTP/1.1 200 Connection Established`. That line comes from this session's network proxy opening the tunnel, not from example.com.\n\nSeparately, the Canva, Gmail, Google Calendar and Google Drive connectors can't be used until you authorize them in your claude.ai connector settings."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

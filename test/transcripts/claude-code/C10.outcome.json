@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "You picked blue, so I wrote `blue` to `c.txt`."
+  },
+  "usage": {
+    "input_tokens": 72088,
+    "output_tokens": 259,
+    "cached_input_tokens": 58578,
+    "cost_usd": 0.11836759999999999
+  }
+}

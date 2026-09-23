@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "The HTTP status line is `HTTP/2 200`."
+  },
+  "usage": {
+    "input_tokens": 28512,
+    "output_tokens": 106,
+    "cached_input_tokens": 25728
+  }
+}

@@ -1,23 +1,27 @@
 {
-  "name": "bo_staff",
-  "version": "0.1.0",
+  "name": "bo",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
   "bin": {
-    "bo": "./bin/bo.mjs",
-    "bo.claude": "./bin/bo.claude.mjs",
-    "bo.codex": "./bin/bo.codex.mjs"
+    "bo": "./bin/bo.mjs"
   },
   "scripts": {
-    "start": "node src/server.ts",
-    "test": "node --test test/contract/*.test.ts",
-    "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm test",
-    "test:integration": "bash scripts/run-integration.sh",
-    "cli": "node src/cli.ts"
+    "start": "node bin/bo.mjs serve",
+    "test": "tsc --noEmit && node --test test/*.test.ts",
+    "conformance": "node scripts/conformance.ts",
+    "test:integration": "node --test --test-concurrency=1 --test-reporter=spec test/integration/*.it.ts"
   },
   "dependencies": {
-    "yaml": "^2.8.2"
+    "@a2a-js/sdk": "^1.2.0",
+    "@anthropic-ai/claude-agent-sdk": "0.3.280",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "smol-toml": "^1.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",

@@ -1,0 +1,45 @@
+[
+  {
+    "op": "session",
+    "native": "486b0aab-f522-455b-8d83-91b7e1c40e18"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZkSoeW9gTUoRnFJ7ic:0",
+    "body": {
+      "type": "reasoning",
+      "text": "Since foreground sleep commands are blocked, and the user explicitly wants sleep 60 run, I'll use the background execution option instead.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01FMkKhoqR3d7TCQFmjHmYPS",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 60"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01FMkKhoqR3d7TCQFmjHmYPS",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 60"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "Command running in background with ID: bi7vos3gf. Output is being written to: /tmp/claude-1000/-tmp-bo-scratch-0HVoDh-repo/486b0aab-f522-455b-8d83-91b7e1c40e18/tasks/bi7vos3gf.output. You will be notified when it completes. To check interim output, use Read on that file path."
+      }
+    }
+  }
+]

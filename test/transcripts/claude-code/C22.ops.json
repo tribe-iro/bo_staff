@@ -1,0 +1,55 @@
+[
+  {
+    "op": "session",
+    "native": "f11bd0e3-c522-4de5-b932-e91f0a8834fa"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZr3zrixXEoJqaeeb6A:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZr3zrixXEoJqaeeb6A:0",
+    "text": "The marker is **`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZr3zrixXEoJqaeeb6A:0",
+    "text": "DATA-OK-3"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZr3zrixXEoJqaeeb6A:0",
+    "text": "`**."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZr3zrixXEoJqaeeb6A:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "The marker is **`DATA-OK-3`**."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

@@ -1,0 +1,11 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"threadId":"01a0cc0f-0b46-7543-bf48-4f19a9e192fa"}
+{"method":"thread/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-0b46-7543-bf48-4f19a9e192fa","item":{"type":"userMessage","id":"01a0cc0f-125d-7661-b311-4d403ab5cd69"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-0b46-7543-bf48-4f19a9e192fa","item":{"type":"userMessage","id":"01a0cc0f-125d-7661-b311-4d403ab5cd69"}}}

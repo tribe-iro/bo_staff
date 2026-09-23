@@ -1,0 +1,85 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf"}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"userMessage","id":"01a0cc0e-3c78-7632-b891-a06e5d44a319"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"userMessage","id":"01a0cc0e-3c78-7632-b891-a06e5d44a319"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336d9738087d2bd24cdb8a2768cb5","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336d9738087d2bd24cdb8a2768cb5","summary":["**Preparing the file change**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"agentMessage","id":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" create"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"b"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" in"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" workspace"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" with"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"ok"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" followed"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" by"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" a"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":" newline"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"agentMessage","id":"msg_0c7fd6894926eda7016ab336dc666c87d283c9b299ce57b260","text":"I’ll create `b.txt` in the workspace with `ok` followed by a newline."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"fileChange","id":"exec-fb2de6db-4eab-473d-a747-37d62114a537","status":"inProgress","changes":[{"path":"/tmp/bo-scratch-gTASHu/repo/b.txt","kind":{"type":"add"}}]}}}
+{"method":"thread/status/changed","params":{}}
+{"method":"serverRequest/resolved","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"fileChange","id":"exec-fb2de6db-4eab-473d-a747-37d62114a537","status":"declined","changes":[{"path":"/tmp/bo-scratch-gTASHu/repo/b.txt","kind":{"type":"add"}}]}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","tokenUsage":{"total":{"inputTokens":13567,"outputTokens":85,"cachedInputTokens":12416,"cacheWriteInputTokens":0,"reasoningOutputTokens":19}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336de1be487d297cc29d0fc56fc7a","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336de1be487d297cc29d0fc56fc7a","summary":["**Awaiting approval to retry patch**"],"content":[]}}}
+{"method":"thread/status/changed","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"commandExecution","id":"exec-2b605857-671b-4d85-a888-8b2fb5443656","status":"inProgress","command":"/usr/bin/bash -lc \"printf 'ok\\\\n' > b.txt\"","exitCode":null,"aggregatedOutput":null}}}
+{"method":"serverRequest/resolved","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"commandExecution","id":"exec-2b605857-671b-4d85-a888-8b2fb5443656","status":"declined","command":"/usr/bin/bash -lc \"printf 'ok\\\\n' > b.txt\"","exitCode":null,"aggregatedOutput":null}}}
+{"method":"thread/status/changed","params":{}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","tokenUsage":{"total":{"inputTokens":27249,"outputTokens":223,"cachedInputTokens":25856,"cacheWriteInputTokens":0,"reasoningOutputTokens":83}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336e4c3b487d2a666c701d304b406","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"reasoning","id":"rs_0c7fd6894926eda7016ab336e4c3b487d2a666c701d304b406","summary":["**Reporting auto-review rejection**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"agentMessage","id":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" couldn"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":"’t"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" create"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":"b"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":"`."}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" Automatic"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" approval"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" review"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" rejected"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" workspace"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" write"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":";"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" no"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" reason"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" was"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":" provided"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","item":{"type":"agentMessage","id":"msg_0c7fd6894926eda7016ab336e7486c87d286d62aa779eeb453","text":"I couldn’t create `b.txt`. Automatic approval review rejected the workspace write; no reason was provided."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","tokenUsage":{"total":{"inputTokens":41114,"outputTokens":267,"cachedInputTokens":39296,"cacheWriteInputTokens":0,"reasoningOutputTokens":100}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0e-3549-7f10-a06c-b187dac87dcf","turn":{"id":"01a0cc0e-357b-73e1-abe4-dd77e5fd4856","status":"completed"}}}

@@ -1,0 +1,26 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"deprecationNotice","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06"}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","tokenUsage":{"total":{"inputTokens":13876,"outputTokens":6,"cachedInputTokens":11776,"cacheWriteInputTokens":0,"reasoningOutputTokens":0}}}}
+{"method":"thread/goal/cleared","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","item":{"type":"userMessage","id":"01a0cc0d-7e54-7fb1-a24d-ac655543a1ff"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","item":{"type":"userMessage","id":"01a0cc0d-7e54-7fb1-a24d-ac655543a1ff"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","item":{"type":"agentMessage","id":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":" said"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":","}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":" “"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":"Hi"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","delta":"!”"}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","item":{"type":"agentMessage","id":"msg_0ee4b3a078dc020f016ab336a8f4e487d283c6850f233db096","text":"I said, “Hi!”"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","tokenUsage":{"total":{"inputTokens":25727,"outputTokens":16,"cachedInputTokens":21120,"cacheWriteInputTokens":0,"reasoningOutputTokens":0}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0d-39f0-7dc3-bb39-1a3d77080f06","turn":{"id":"01a0cc0d-77a3-7ea2-9a8f-ad478dd6a7e2","status":"completed"}}}

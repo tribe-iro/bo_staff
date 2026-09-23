@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "The HTTP status line is **`HTTP/2 200`**. example.com returned 200 OK, served from Cloudflare's cache (`cf-cache-status: HIT`).\n\nThe output also starts with `HTTP/1.1 200 Connection Established`. That line comes from this session's network proxy opening the tunnel, not from example.com.\n\nSeparately, the Canva, Gmail, Google Calendar and Google Drive connectors can't be used until you authorize them in your claude.ai connector settings."
+  },
+  "usage": {
+    "input_tokens": 47569,
+    "output_tokens": 347,
+    "cached_input_tokens": 34184,
+    "cost_usd": 0.11428379999999999
+  }
+}

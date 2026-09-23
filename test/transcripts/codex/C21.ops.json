@@ -1,0 +1,45 @@
+[
+  {
+    "op": "upsert",
+    "key": "rs_09e61b0b3d723183016ab337554fc887d2827a134d2056a5f1",
+    "body": {
+      "type": "reasoning",
+      "text": "**Solving for x**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0",
+    "text": "5"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "5"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

@@ -1,0 +1,245 @@
+[
+  {
+    "op": "session",
+    "native": "6388d6c6-c0c7-4e36-b8a4-2f245aeee021"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_013b2vBzhN6LWxuRQ7ryMmZp",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-ef0sYX/repo/b.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_013b2vBzhN6LWxuRQ7ryMmZp",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-ef0sYX/repo/b.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "failed",
+      "outcome": {
+        "excerpt": "denied by caller"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:0",
+    "body": {
+      "type": "reasoning",
+      "text": "That write was denied by the caller, so I shouldn't retry it verbatim or try to work around it using Bash — that would be circumventing the user's decision. Better to just report back instead.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "I did"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "n't create `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "b.txt`: the write"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " to `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "/tmp/bo-"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "scratch-ef0s"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "YX/repo/b."
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "txt` was denied. I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " haven't tried another"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " way around"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " that, since a denial means the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " action was"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " declined.\n\nIf you want the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " file, all"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "ow the write and I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "'ll create it with"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " cont"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "ents `ok`,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " or run this"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " y"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "ourself:\n\n```b"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "ash\necho ok > b"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": ".txt\n```\n\nSepar"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "ately, the Can"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": "va, Gmail,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " Google Calendar and Google"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " Drive connectors need to"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " be authorized in your claude"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": ".ai connector settings before"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "text": " can use them."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZhzeixJUvsnYUrwRHP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I didn't create `b.txt`: the write to `/tmp/bo-scratch-ef0sYX/repo/b.txt` was denied. I haven't tried another way around that, since a denial means the action was declined.\n\nIf you want the file, allow the write and I'll create it with the contents `ok`, or run this yourself:\n\n```bash\necho ok > b.txt\n```\n\nSeparately, the Canva, Gmail, Google Calendar and Google Drive connectors need to be authorized in your claude.ai connector settings before I can use them."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "`a.txt` contains only “hello”—a greeting, with no further content to summarize."
+  },
+  "usage": {
+    "input_tokens": 23396,
+    "output_tokens": 104,
+    "cached_input_tokens": 20864
+  }
+}

@@ -1,0 +1,432 @@
+[
+  {
+    "op": "upsert",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": "I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": "’ll"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " call"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " those"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " tools"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " in"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " order"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " report"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " their"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": " responses"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "text": "."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I’ll call those tools in order and report their responses."
+        }
+      ],
+      "status": "completed"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "rs_0a99b77cb1988641016ab336fa056887d2bc476f27f598176d",
+    "body": {
+      "type": "reasoning",
+      "text": "**Calling available marker**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-6697ebcf-1d22-45e0-a0c9-ee11c480e263",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "integration_marker"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-6697ebcf-1d22-45e0-a0c9-ee11c480e263",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "integration_marker"
+      },
+      "status": "completed"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "rs_0a99b77cb1988641016ab33700642487d2a21df45ecdadc8bf",
+    "body": {
+      "type": "reasoning",
+      "text": "**Identifying exact names**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "rs_0a99b77cb1988641016ab33706176087d2862b20a652667c12",
+    "body": {
+      "type": "reasoning",
+      "text": "**Attempting the requested call**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "integration"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "_marker"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " returned"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "M"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "CP"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "-M"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "ARK"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "ER"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "-M"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "ISSING"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "`."
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " couldn"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "’t"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " call"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "other"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "_tool"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "`:"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " it"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " isn"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "’t"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " available"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " in"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " this"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " session"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": ","
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " attempted"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " call"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " returned"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "Type"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "Error"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": ":"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " tools"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": ".m"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "cp"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "__"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "fx"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "__"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "other"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "_tool"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " is"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " not"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " a"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": " function"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "text": "`."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "`integration_marker` returned `MCP-MARKER-MISSING`. I couldn’t call `other_tool`: it isn’t available in this session, and the attempted call returned `TypeError: tools.mcp__fx__other_tool is not a function`."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

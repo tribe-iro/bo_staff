@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "The marker is **`DATA-OK-3`**."
+  },
+  "usage": {
+    "input_tokens": 23150,
+    "output_tokens": 32,
+    "cached_input_tokens": 11977,
+    "cost_usd": 0.08572740000000001
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "error": {
+    "code": "engine_error",
+    "message": "Claude execution failed"
+  },
+  "usage": {
+    "input_tokens": 20360,
+    "output_tokens": 160,
+    "cached_input_tokens": 11698,
+    "cost_usd": 0.0683766
+  },
+  "diagnostic": {
+    "subtype": "error_during_execution",
+    "terminalReason": "aborted_streaming"
+  }
+}

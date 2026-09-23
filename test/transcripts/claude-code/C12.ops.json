@@ -1,0 +1,328 @@
+[
+  {
+    "op": "session",
+    "native": "3e474de1-6e3a-4465-880f-9201d1604133"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01WNG3fAxG2gn8iGagV7VPEd",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "other",
+        "name": "ToolSearch"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01WNG3fAxG2gn8iGagV7VPEd",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "other",
+        "name": "ToolSearch"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": ""
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01SCF5KXs3cR2LND8xAUCUaG",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "integration_marker"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01SCF5KXs3cR2LND8xAUCUaG",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "integration_marker"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "MCP-MARKER-MISSING"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01TdL6BuHvRZXKwyEh7zVGpJ",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "other_tool"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01TdL6BuHvRZXKwyEh7zVGpJ",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "mcp",
+        "server": "fx",
+        "tool": "other_tool"
+      },
+      "status": "failed",
+      "outcome": {
+        "excerpt": "tool not permitted"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:0",
+    "body": {
+      "type": "reasoning",
+      "text": "The integration_marker returned \"MCP-MARKER-MISSING,\" so I'll report that value as-is. The other_tool call errored with \"tool not permitted,\" so I won't retry it.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "I called both tools."
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " Here's what they returned:"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "\n\n- **`integ"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ration_marker`**"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " returned the string `MCP"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "-MARKER-MIS"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "SING`. The call"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " wor"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ked, but the value su"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ggests no"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " marker is"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " set up for this test run."
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "\n- **`other_tool`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "** did"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "n't run. It failed with"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " the error `tool not permit"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ted`, so I have"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " no value"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " from it. That"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "'s a"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " permission den"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ial, so I didn't try"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " it"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " again. If you all"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ow it in"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " your permission"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " settings, I can"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " call it again.\n\nFour"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " cla"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ude.ai connectors ("
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "Canva, Gmail"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": ", Google Calendar and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " Google Drive) need to"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " be authorized in your"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " claude.ai connector sett"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ings before they can be used. They"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": " a"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ren't need"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "text": "ed for this task."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZk2nWxQaV12n2GLqtV:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I called both tools. Here's what they returned:\n\n- **`integration_marker`** returned the string `MCP-MARKER-MISSING`. The call worked, but the value suggests no marker is set up for this test run.\n- **`other_tool`** didn't run. It failed with the error `tool not permitted`, so I have no value from it. That's a permission denial, so I didn't try it again. If you allow it in your permission settings, I can call it again.\n\nFour claude.ai connectors (Canva, Gmail, Google Calendar and Google Drive) need to be authorized in your claude.ai connector settings before they can be used. They aren't needed for this task."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

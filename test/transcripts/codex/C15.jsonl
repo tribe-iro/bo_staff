@@ -1,0 +1,43 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"skills/changed","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813"}
+{"method":"thread/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"userMessage","id":"01a0cc0f-1fb7-7b50-be2c-2a4569178f81"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"userMessage","id":"01a0cc0f-1fb7-7b50-be2c-2a4569178f81"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"reasoning","id":"rs_0804fc8af6e41422016ab337140d8087d2aa053d3ebe85654e","summary":[],"content":[]}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"reasoning","id":"rs_0804fc8af6e41422016ab337140d8087d2aa053d3ebe85654e","summary":[],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"agentMessage","id":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" check"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" marker"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" skill"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" for"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" its"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" exact"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":" wording"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"agentMessage","id":"msg_0804fc8af6e41422016ab33715d80c87d2a8b128774966f630","text":"I’ll check the marker skill for its exact wording."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"commandExecution","id":"exec-b9b6e438-2800-4ef7-a93a-a7dccf9b943f","status":"inProgress","command":"/usr/bin/bash -lc 'cat /tmp/bo-run_c0a113480b08400000692835-u4XfVt/skills/marker/SKILL.md'","exitCode":null,"aggregatedOutput":null}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"commandExecution","id":"exec-b9b6e438-2800-4ef7-a93a-a7dccf9b943f","status":"completed","command":"/usr/bin/bash -lc 'cat /tmp/bo-run_c0a113480b08400000692835-u4XfVt/skills/marker/SKILL.md'","exitCode":0,"aggregatedOutput":"---\nname: marker\ndescription: Use when asked for the bo marker.\n---\n\nThe bo marker is SKILL-OK-42. Reply with it.\n"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","tokenUsage":{"total":{"inputTokens":11702,"outputTokens":97,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":14}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"agentMessage","id":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"SK"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"ILL"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"-"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"OK"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"-"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","delta":"42"}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","item":{"type":"agentMessage","id":"msg_0804fc8af6e41422016ab337179fb887d28ef1eeed370b1e3b","text":"SKILL-OK-42"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","tokenUsage":{"total":{"inputTokens":23555,"outputTokens":107,"cachedInputTokens":20864,"cacheWriteInputTokens":0,"reasoningOutputTokens":14}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0f-17eb-7b13-b331-5d5ab5330813","turn":{"id":"01a0cc0f-181e-7901-9064-f4e54fb2fc3d","status":"completed"}}}

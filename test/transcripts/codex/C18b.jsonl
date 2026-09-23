@@ -1,0 +1,51 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6"}
+{"method":"thread/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"userMessage","id":"01a0cc0f-eb25-7713-9977-d397f70041da"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"userMessage","id":"01a0cc0f-eb25-7713-9977-d397f70041da"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"reasoning","id":"rs_00a791763f667d2b016ab337482a2887d2ab4337fc0ba899b4","summary":[],"content":[]}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"reasoning","id":"rs_00a791763f667d2b016ab337482a2887d2ab4337fc0ba899b4","summary":[],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"agentMessage","id":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" run"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" command"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" report"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" status"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" line"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" from"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" its"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":" response"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"agentMessage","id":"msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed","text":"I’ll run the command and report the status line from its response."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"commandExecution","id":"exec-27de0189-9ebc-41b3-a043-d5ab0361091f","status":"inProgress","command":"/usr/bin/bash -lc 'curl -sI https://example.com'","exitCode":null,"aggregatedOutput":null}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"commandExecution","id":"exec-27de0189-9ebc-41b3-a043-d5ab0361091f","status":"completed","command":"/usr/bin/bash -lc 'curl -sI https://example.com'","exitCode":0,"aggregatedOutput":"HTTP/2 200 \r\ndate: Wed, 23 Sep 2026 02:19:53 GMT\r\ncontent-type: text/html\r\nserver: cloudflare\r\nlast-modified: Tue, 22 Sep 2026 21:15:25 GMT\r\nallow: GET, HEAD\r\naccept-ranges: bytes\r\nage: 3252\r\ncf-cache-status: HIT\r\ncf-ray: a3f6112e1bcf83e9-GRU\r\n\r\n"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","tokenUsage":{"total":{"inputTokens":14128,"outputTokens":90,"cachedInputTokens":11776,"cacheWriteInputTokens":0,"reasoningOutputTokens":11}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"agentMessage","id":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"The"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" HTTP"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" status"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" line"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" is"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"HTTP"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"2"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":" "}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"200"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","delta":"`."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","item":{"type":"agentMessage","id":"msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e","text":"The HTTP status line is `HTTP/2 200`."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","tokenUsage":{"total":{"inputTokens":28512,"outputTokens":106,"cachedInputTokens":25728,"cacheWriteInputTokens":0,"reasoningOutputTokens":11}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0f-e378-7a03-9dcf-e2d66035a2e6","turn":{"id":"01a0cc0f-e3ac-7283-8637-8c2248d064c0","status":"completed"}}}

@@ -1,0 +1,222 @@
+[
+  {
+    "op": "session",
+    "native": "1c57f3d5-b920-41e7-8a0f-313468cb81a6"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01Y1tM2NPx6tv4A6iCpq4MtN",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 2 && echo 1"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01Y1tM2NPx6tv4A6iCpq4MtN",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 2 && echo 1"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "1"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01E6dtJhhyMZJRwZc4gJjQkm",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 2 && echo 2"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01E6dtJhhyMZJRwZc4gJjQkm",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "sleep 2 && echo 2"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "2"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:0",
+    "body": {
+      "type": "reasoning",
+      "text": "That stop instruction is coming through a legitimate system-framed message, not a function result, so I'll treat it as real and stop after finishing the current number.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " stopped counting at 2"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": ", as you asked. I got"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " through 1 and 2 "
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "of"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " the 30,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " each as"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " its own `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "sleep 2 && ech"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "o N` command,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " and "
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "ran n"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "othing after your"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " message"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " ar"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "rived.\n\nSeparately,"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " the Canva, Gm"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "ail, Google Calendar"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " and Google Drive connect"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": "ors need"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " to be authorized before they can"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " be used. You can do that in"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " your claude.ai connector"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "text": " settings."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZjHL7H8hdddvAvoC4b:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I stopped counting at 2, as you asked. I got through 1 and 2 of the 30, each as its own `sleep 2 && echo N` command, and ran nothing after your message arrived.\n\nSeparately, the Canva, Gmail, Google Calendar and Google Drive connectors need to be authorized before they can be used. You can do that in your claude.ai connector settings."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

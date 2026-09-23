@@ -1,0 +1,15 @@
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"init","session_id":"3a095e51-bd2b-47ca-93d8-414acc0ad947","model":"claude-opus-5-5[1m]"}}
+{"message":{"type":"system","subtype":"status","session_id":"3a095e51-bd2b-47ca-93d8-414acc0ad947"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZfCsrETSMdQBAVkgeU"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"text"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi! How can I help"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" you today?"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZfCsrETSMdQBAVkgeU","content":[{"type":"text","text":"Hi! How can I help you today?"}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"rate_limit_event"}}
+{"message":{"type":"result","subtype":"success","is_error":false,"result":"Hi! How can I help you today?","terminal_reason":"completed","total_cost_usd":0.1703242,"modelUsage":{"claude-opus-5-5[1m]":{"inputTokens":6,"outputTokens":214,"cacheReadInputTokens":47501,"cacheCreationInputTokens":19565}}}}
+{"message":{"type":"command_lifecycle"}}

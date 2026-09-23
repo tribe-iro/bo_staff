@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "data",
+    "data": {
+      "answer": "The capital of France is Paris."
+    }
+  },
+  "usage": {
+    "input_tokens": 23206,
+    "output_tokens": 71,
+    "cached_input_tokens": 12098,
+    "cost_usd": 0.08625260000000001
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "SKILL-OK-42"
+  },
+  "usage": {
+    "input_tokens": 23555,
+    "output_tokens": 107,
+    "cached_input_tokens": 20864
+  }
+}

@@ -1,0 +1,115 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909"}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"userMessage","id":"01a0cc0e-aff3-7b62-a1e8-d9f4cc73de8c"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"userMessage","id":"01a0cc0e-aff3-7b62-a1e8-d9f4cc73de8c"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336f6eb6887d2986a1cb1897632f2","summary":[],"content":[]}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336f6eb6887d2986a1cb1897632f2","summary":[],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"agentMessage","id":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" call"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" those"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" tools"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" in"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" order"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" report"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" their"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":" responses"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"agentMessage","id":"msg_0a99b77cb1988641016ab336f878a087d2b131d2af8d715992","text":"I’ll call those tools in order and report their responses."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":11674,"outputTokens":62,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":8}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336fa056887d2bc476f27f598176d","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336fa056887d2bc476f27f598176d","summary":["**Calling available marker**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"mcpToolCall","id":"exec-6697ebcf-1d22-45e0-a0c9-ee11c480e263","status":"inProgress","server":"fx","tool":"integration_marker"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"mcpToolCall","id":"exec-6697ebcf-1d22-45e0-a0c9-ee11c480e263","status":"completed","server":"fx","tool":"integration_marker"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":23496,"outputTokens":106,"cachedInputTokens":20864,"cacheWriteInputTokens":0,"reasoningOutputTokens":23}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336fd526887d283551d448593f477","summary":[],"content":[]}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab336fd526887d283551d448593f477","summary":[],"content":[]}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":35409,"outputTokens":150,"cachedInputTokens":32512,"cacheWriteInputTokens":0,"reasoningOutputTokens":34}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab33700642487d2a21df45ecdadc8bf","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab33700642487d2a21df45ecdadc8bf","summary":["**Identifying exact names**"],"content":[]}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":56508,"outputTokens":202,"cachedInputTokens":44288,"cacheWriteInputTokens":0,"reasoningOutputTokens":43}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab33706176087d2862b20a652667c12","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"reasoning","id":"rs_0a99b77cb1988641016ab33706176087d2862b20a652667c12","summary":["**Attempting the requested call**"],"content":[]}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":77691,"outputTokens":272,"cachedInputTokens":65152,"cacheWriteInputTokens":0,"reasoningOutputTokens":71}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"agentMessage","id":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"integration"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"_marker"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" returned"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"M"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"CP"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"-M"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"ARK"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"ER"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"-M"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"ISSING"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"`."}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" couldn"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"’t"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" call"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"other"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"_tool"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"`:"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" it"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" isn"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"’t"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" available"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" in"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" this"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" session"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":","}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" attempted"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" call"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" returned"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"Type"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"Error"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":":"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" tools"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":".m"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"cp"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"__"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"fx"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"__"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"other"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"_tool"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" is"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" not"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" a"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":" function"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","delta":"`."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","item":{"type":"agentMessage","id":"msg_0a99b77cb1988641016ab3370bdb0487d2a3c24139102f7980","text":"`integration_marker` returned `MCP-MARKER-MISSING`. I couldn’t call `other_tool`: it isn’t available in this session, and the attempted call returned `TypeError: tools.mcp__fx__other_tool is not a function`."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","tokenUsage":{"total":{"inputTokens":98982,"outputTokens":328,"cachedInputTokens":86144,"cacheWriteInputTokens":0,"reasoningOutputTokens":71}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0e-a926-75f2-99c5-a0e18d196909","turn":{"id":"01a0cc0e-a96d-7b80-a1e9-e4048f21c5c8","status":"completed"}}}

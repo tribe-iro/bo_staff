@@ -1,0 +1,16 @@
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"init","session_id":"f11bd0e3-c522-4de5-b932-e91f0a8834fa","model":"claude-opus-5-5[1m]"}}
+{"message":{"type":"system","subtype":"status","session_id":"f11bd0e3-c522-4de5-b932-e91f0a8834fa"}}
+{"message":{"type":"rate_limit_event"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZr3zrixXEoJqaeeb6A"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"text"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"The marker is **`"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"DATA-OK-3"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"`**."}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZr3zrixXEoJqaeeb6A","content":[{"type":"text","text":"The marker is **`DATA-OK-3`**."}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"result","subtype":"success","is_error":false,"result":"The marker is **`DATA-OK-3`**.","terminal_reason":"completed","total_cost_usd":0.08572740000000001,"modelUsage":{"claude-haiku-4-5-20251001":{"inputTokens":927,"outputTokens":13,"cacheReadInputTokens":0,"cacheCreationInputTokens":0},"claude-opus-5-5[1m]":{"inputTokens":2,"outputTokens":19,"cacheReadInputTokens":11977,"cacheCreationInputTokens":10244}}}}
+{"message":{"type":"command_lifecycle"}}

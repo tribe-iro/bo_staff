@@ -1,0 +1,110 @@
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"init","session_id":"3e474de1-6e3a-4465-880f-9201d1604133","model":"claude-opus-5-5[1m]"}}
+{"message":{"type":"system","subtype":"status","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"rate_limit_event"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZjeFCEcpHYvyUSKKaN"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZjeFCEcpHYvyUSKKaN","content":[{"type":"tool_use","id":"toolu_01WNG3fAxG2gn8iGagV7VPEd","name":"ToolSearch","input":{}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01WNG3fAxG2gn8iGagV7VPEd","content":[{"type":"tool_reference","tool_name":"mcp__fx__integration_marker"},{"type":"tool_reference","tool_name":"mcp__fx__other_tool"}]}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"system","subtype":"status","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZjrgYy4ATfkfZ5AbvD"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZjrgYy4ATfkfZ5AbvD","content":[{"type":"tool_use","id":"toolu_01SCF5KXs3cR2LND8xAUCUaG","name":"mcp__fx__integration_marker","input":{}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":1,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01SCF5KXs3cR2LND8xAUCUaG","content":[{"type":"text","text":"MCP-MARKER-MISSING"}]}]}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZjrgYy4ATfkfZ5AbvD","content":[{"type":"tool_use","id":"toolu_01TdL6BuHvRZXKwyEh7zVGpJ","name":"mcp__fx__other_tool","input":{}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":1}}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01TdL6BuHvRZXKwyEh7zVGpJ","is_error":true,"content":"tool not permitted"}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"system","subtype":"status","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZk2nWxQaV12n2GLqtV"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"thinking"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"3e474de1-6e3a-4465-880f-9201d1604133"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZk2nWxQaV12n2GLqtV","content":[{"type":"thinking","thinking":"The integration_marker returned \"MCP-MARKER-MISSING,\" so I'll report that value as-is. The other_tool call errored with \"tool not permitted,\" so I won't retry it.\n\n"}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":1,"content_block":{"type":"text"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"I called both tools."}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Here's what they returned:"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n\n- **`integ"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ration_marker`**"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" returned the string `MCP"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"-MARKER-MIS"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"SING`. The call"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" wor"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ked, but the value su"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ggests no"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" marker is"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" set up for this test run."}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"\n- **`other_tool`"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"** did"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"n't run. It failed with"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" the error `tool not permit"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ted`, so I have"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" no value"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" from it. That"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"'s a"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" permission den"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ial, so I didn't try"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" it"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" again. If you all"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ow it in"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" your permission"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" settings, I can"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" call it again.\n\nFour"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" cla"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ude.ai connectors ("}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Canva, Gmail"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":", Google Calendar and"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" Google Drive) need to"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" be authorized in your"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" claude.ai connector sett"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ings before they can be used. They"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" a"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ren't need"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ed for this task."}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZk2nWxQaV12n2GLqtV","content":[{"type":"text","text":"I called both tools. Here's what they returned:\n\n- **`integration_marker`** returned the string `MCP-MARKER-MISSING`. The call worked, but the value suggests no marker is set up for this test run.\n- **`other_tool`** didn't run. It failed with the error `tool not permitted`, so I have no value from it. That's a permission denial, so I didn't try it again. If you allow it in your permission settings, I can call it again.\n\nFour claude.ai connectors (Canva, Gmail, Google Calendar and Google Drive) need to be authorized in your claude.ai connector settings before they can be used. They aren't needed for this task."}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":1}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"result","subtype":"success","is_error":false,"result":"I called both tools. Here's what they returned:\n\n- **`integration_marker`** returned the string `MCP-MARKER-MISSING`. The call worked, but the value suggests no marker is set up for this test run.\n- **`other_tool`** didn't run. It failed with the error `tool not permitted`, so I have no value from it. That's a permission denial, so I didn't try it again. If you allow it in your permission settings, I can call it again.\n\nFour claude.ai connectors (Canva, Gmail, Google Calendar and Google Drive) need to be authorized in your claude.ai connector settings before they can be used. They aren't needed for this task.","terminal_reason":"completed","total_cost_usd":0.1196792,"modelUsage":{"claude-haiku-4-5-20251001":{"inputTokens":911,"outputTokens":14,"cacheReadInputTokens":0,"cacheCreationInputTokens":0},"claude-opus-5-5[1m]":{"inputTokens":6,"outputTokens":433,"cacheReadInputTokens":59791,"cacheCreationInputTokens":12257}}}}
+{"message":{"type":"command_lifecycle"}}

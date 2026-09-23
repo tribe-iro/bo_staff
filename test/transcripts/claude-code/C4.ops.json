@@ -1,0 +1,98 @@
+[
+  {
+    "op": "session",
+    "native": "46961322-dcaa-4dfb-b9f2-4aee60fda96d"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:0",
+    "body": {
+      "type": "reasoning",
+      "text": "I just replied with a simple greeting. I should briefly mention that some MCP servers need authorization, keeping it short since it's ambient context rather than the main focus.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": "I said: \""
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": "Hi! How can I help you"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " today?\"\n\nAlso, the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " Canva, Gmail"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": ", Google Calendar and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " Google Drive connectors"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " need to be authorized before I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " can use them. You can do that"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": " in your claude.ai conn"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "text": "ector settings."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZesDAwLCurteEdr6qP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I said: \"Hi! How can I help you today?\"\n\nAlso, the Canva, Gmail, Google Calendar and Google Drive connectors need to be authorized before I can use them. You can do that in your claude.ai connector settings."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

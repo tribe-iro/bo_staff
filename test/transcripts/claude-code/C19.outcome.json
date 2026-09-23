@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "Red"
+  },
+  "usage": {
+    "input_tokens": 23161,
+    "output_tokens": 14,
+    "cached_input_tokens": 11977,
+    "cost_usd": 0.0856614
+  }
+}

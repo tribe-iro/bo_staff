@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "Hi! How can I help you today?"
+  },
+  "usage": {
+    "input_tokens": 67072,
+    "output_tokens": 214,
+    "cached_input_tokens": 47501,
+    "cost_usd": 0.1703242
+  }
+}

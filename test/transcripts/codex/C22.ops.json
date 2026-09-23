@@ -1,0 +1,57 @@
+[
+  {
+    "op": "upsert",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "text": "DATA"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "text": "-"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "text": "OK"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "text": "-"
+  },
+  {
+    "op": "delta",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "text": "3"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0371346b6b585989016ab3375c878087d2a11d55bd569c5163",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "DATA-OK-3"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

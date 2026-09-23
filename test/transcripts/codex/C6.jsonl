@@ -1,0 +1,100 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b"}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"userMessage","id":"01a0cc0d-9a9a-7210-a7af-b0b792645abe"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"userMessage","id":"01a0cc0d-9a9a-7210-a7af-b0b792645abe"}}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"reasoning","id":"rs_03cc5550700a0e0e016ab336b01ae087d2917d77bb4364e8a8","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"reasoning","id":"rs_03cc5550700a0e0e016ab336b01ae087d2917d77bb4364e8a8","summary":["**Checking execution options**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"agentMessage","id":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":"I"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":"’ll"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" run"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" three"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" commands"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" in"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" order"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" report"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" any"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" filesystem"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":" restriction"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"agentMessage","id":"msg_03cc5550700a0e0e016ab336b6f90887d291459fa6725eb194","text":"I’ll run the three commands in order and report any filesystem restriction."}}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"commandExecution","id":"exec-96d7d64d-0381-46b8-8ae7-07fcf17cda72","status":"inProgress","command":"/usr/bin/bash -lc \"printf 'ok' > inside.txt\"","exitCode":null,"aggregatedOutput":null}}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"commandExecution","id":"exec-96d7d64d-0381-46b8-8ae7-07fcf17cda72","status":"completed","command":"/usr/bin/bash -lc \"printf 'ok' > inside.txt\"","exitCode":0,"aggregatedOutput":null}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","tokenUsage":{"total":{"inputTokens":11663,"outputTokens":113,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":42}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","tokenUsage":{"total":{"inputTokens":23495,"outputTokens":162,"cachedInputTokens":20864,"cacheWriteInputTokens":0,"reasoningOutputTokens":42}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","tokenUsage":{"total":{"inputTokens":35444,"outputTokens":208,"cachedInputTokens":32512,"cacheWriteInputTokens":0,"reasoningOutputTokens":42}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"agentMessage","id":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"Created"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" ["}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"inside"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"]"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"(/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"tmp"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"bo"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"-s"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"cratch"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"-v"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"DX"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"nj"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"c"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"/re"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"po"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"/"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"inside"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":")"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" containing"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"ok"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"`."}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" Both"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" commands"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" targeting"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" the"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" parent"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" directory"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" failed"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" because"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" it"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" is"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" read"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"-only"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":","}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" so"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"../"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"outside"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" and"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" `"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"../"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"outside"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"2"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":".txt"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"`"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" were"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" not"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":" created"}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","delta":"."}}
+{"method":"item/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","item":{"type":"agentMessage","id":"msg_03cc5550700a0e0e016ab336bd5d0c87d2979c981c7b4d039c","text":"Created [inside.txt](/tmp/bo-scratch-vDXnjc/repo/inside.txt) containing `ok`. Both commands targeting the parent directory failed because it is read-only, so `../outside.txt` and `../outside2.txt` were not created."}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","tokenUsage":{"total":{"inputTokens":47503,"outputTokens":267,"cachedInputTokens":44288,"cacheWriteInputTokens":0,"reasoningOutputTokens":42}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc0d-93f0-7c60-8f5b-026ac32e7d5b","turn":{"id":"01a0cc0d-9424-77e1-9f69-a63a8f84635e","status":"completed"}}}

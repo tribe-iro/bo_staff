@@ -1,0 +1,37 @@
+[
+  {
+    "op": "session",
+    "native": "b68163f7-219c-4c18-a883-88b84969da8f"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01LDHUrnBBErTFsTrBGQVCHa",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "other",
+        "name": "StructuredOutput"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01LDHUrnBBErTFsTrBGQVCHa",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "other",
+        "name": "StructuredOutput"
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "Structured output provided successfully"
+      }
+    }
+  }
+]

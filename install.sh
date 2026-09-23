@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-MIN_NODE_VERSION=22
+MIN_NODE_VERSION=24
 
 # ---------------------------------------------------------------------------
 # Checks
@@ -35,13 +35,16 @@ npm install --omit=dev --silent
 BIN_DIR="${PREFIX:-$HOME/.local}/bin"
 mkdir -p "$BIN_DIR"
 
-for cmd in bo bo.claude bo.codex; do
+for cmd in bo; do
   src="$REPO_DIR/bin/${cmd}.mjs"
   chmod +x "$src"
   dest="$BIN_DIR/$cmd"
 
-  if [ -L "$dest" ] || [ -e "$dest" ]; then
+  if [ -L "$dest" ]; then
     rm "$dest"
+  elif [ -e "$dest" ]; then
+    echo "Error: $dest exists and is not a symlink; refusing to replace it."
+    exit 1
   fi
 
   ln -s "$src" "$dest"
@@ -66,21 +69,30 @@ fi
 # ---------------------------------------------------------------------------
 
 echo ""
-echo "Setting up bo_staff server as a systemd user service..."
+if ! command -v systemctl &>/dev/null || ! systemctl --user show-environment &>/dev/null; then
+  echo "systemd user session not available; start the server with: bo serve"
+  echo ""
+  echo "bo installed. Run 'bo --help' to get started."
+  exit 0
+fi
+
+echo "Setting up bo server as a systemd user service..."
 
 SERVICE_DIR="$HOME/.config/systemd/user"
-SERVICE_FILE="$SERVICE_DIR/bo-staff.service"
+SERVICE_FILE="$SERVICE_DIR/bo.service"
 mkdir -p "$SERVICE_DIR"
 
 cat > "$SERVICE_FILE" <<EOF
 [Unit]
-Description=bo_staff gateway server
+Description=bo server
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=$(command -v node) ${REPO_DIR}/src/server.ts
+ExecStart=$(command -v node) ${REPO_DIR}/bin/bo.mjs serve
 WorkingDirectory=${REPO_DIR}
+# PATH as seen at install time, so the service finds the claude and codex CLIs.
+Environment="PATH=${PATH}"
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
 Restart=on-failure
@@ -91,11 +103,11 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now bo-staff.service
+systemctl --user enable --now bo.service
 
 echo "  Service installed and started."
-echo "  Status: systemctl --user status bo-staff"
-echo "  Logs:   journalctl --user -u bo-staff -f"
+echo "  Status: systemctl --user status bo"
+echo "  Logs:   journalctl --user -u bo -f"
 
 echo ""
-echo "bo_staff installed. Run 'bo --help' to get started."
+echo "bo installed. Run 'bo --help' to get started."

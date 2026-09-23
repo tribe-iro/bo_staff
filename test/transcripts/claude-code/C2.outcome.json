@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "`a.txt` has one line: the word **\"hello\"**. It isn't tracked by git yet."
+  },
+  "usage": {
+    "input_tokens": 47353,
+    "output_tokens": 147,
+    "cached_input_tokens": 34167,
+    "cost_usd": 0.10873540000000001
+  }
+}

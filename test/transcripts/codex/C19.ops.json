@@ -1,0 +1,45 @@
+[
+  {
+    "op": "upsert",
+    "key": "rs_0d9081f5d3b156eb016ab3374f9f2087d29a703e5735dfee08",
+    "body": {
+      "type": "reasoning",
+      "text": "**Identifying red**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0d9081f5d3b156eb016ab3375169f887d2bd42d8322cbfc09e",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_0d9081f5d3b156eb016ab3375169f887d2bd42d8322cbfc09e",
+    "text": "Red"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_0d9081f5d3b156eb016ab3375169f887d2bd42d8322cbfc09e",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "Red"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

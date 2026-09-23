@@ -1,0 +1,53 @@
+[
+  {
+    "op": "session",
+    "native": "dfa1e362-be3a-46fd-80ab-0c2f3f677445"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZqiz8853VoH9rLm5yP:0",
+    "body": {
+      "type": "reasoning",
+      "text": "Setting the ball's price as x, the bat costs x+100, so 2x+100=110, giving x=5 cents.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZqiz8853VoH9rLm5yP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZqiz8853VoH9rLm5yP:1",
+    "text": "5"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZqiz8853VoH9rLm5yP:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "5"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

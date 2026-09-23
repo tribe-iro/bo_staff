@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "I couldn't get the status line from example.com because the sandbox's network filter blocked the request.\n\n- **What came back:** `curl` exited with code 7. The only response was from the sandbox's proxy, not from example.com: `HTTP/1.1 403 Forbidden` with `X-Proxy-Error: blocked-by-allowlist`.\n- **Why:** `example.com:443` isn't on the allowlist of sites this session can reach. I tried to request an exception for it and was refused. This session's allowlist is fixed, either by a managed policy or because it's a confined run. I didn't turn off the sandbox to get around that.\n\nTo get the real result, you can:\n1. Add `example.com` to the allowlist with `/sandbox` or in your settings, if you're allowed to change them, and I'll run it again.\n2. Or run `curl -sI https://example.com` in your own terminal. You should normally see `HTTP/2 200` or `HTTP/1.1 200 OK`.\n\nSeparately, the claude.ai Canva, Gmail, Google Calendar and Google Drive connectors can't be used until you authorize them in your claude.ai connector settings. That doesn't affect this request."
+  },
+  "usage": {
+    "input_tokens": 72231,
+    "output_tokens": 832,
+    "cached_input_tokens": 58608,
+    "cost_usd": 0.1307496
+  }
+}

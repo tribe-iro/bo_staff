@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "The bo marker is **SKILL-OK-42**."
+  },
+  "usage": {
+    "input_tokens": 47463,
+    "output_tokens": 142,
+    "cached_input_tokens": 34187,
+    "cost_usd": 0.10944840000000002
+  }
+}

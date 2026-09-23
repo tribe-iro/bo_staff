@@ -1,0 +1,97 @@
+[
+  {
+    "op": "session",
+    "native": "00216f49-17fe-4a77-b0b3-2e10521b65c2"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01Nq2LQENi1xKuGV7V1x9SGW",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-KkL6zL/repo/c.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_01Nq2LQENi1xKuGV7V1x9SGW",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "edit",
+        "changes": [
+          {
+            "path": "/tmp/bo-scratch-KkL6zL/repo/c.txt",
+            "change": "add"
+          }
+        ]
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "File created successfully at: /tmp/bo-scratch-KkL6zL/repo/c.txt (file state is current in your context — no need to Read it back)"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "text": "You picked bl"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "text": "ue, so I w"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "text": "rote `blue` to `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "text": "c.txt`."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZiZnHmWy4JAXX1SNw4:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "You picked blue, so I wrote `blue` to `c.txt`."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

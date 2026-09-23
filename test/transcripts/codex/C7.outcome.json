@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "`ls` showed `a.txt`. `touch x.txt` failed because the filesystem is read-only, so `x.txt` was not created."
+  },
+  "usage": {
+    "input_tokens": 23100,
+    "output_tokens": 157,
+    "cached_input_tokens": 20608
+  }
+}

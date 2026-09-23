@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
+    "target": "ES2024",
+    "lib": ["ES2024"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
-    "allowJs": false,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
     "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
     "noEmit": true,
-    "types": [
-      "node"
-    ]
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"]
 }

@@ -1,0 +1,124 @@
+[
+  {
+    "op": "session",
+    "native": "22cf8cd2-82ab-4abe-8f17-1b4e37344386"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_015w6CCvFKCns3MLhjMJwKPA",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "read",
+        "paths": [
+          "/tmp/bo-scratch-qeLWh3/repo/a.txt"
+        ]
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "toolu_015w6CCvFKCns3MLhjMJwKPA",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "read",
+        "paths": [
+          "/tmp/bo-scratch-qeLWh3/repo/a.txt"
+        ]
+      },
+      "status": "completed",
+      "outcome": {
+        "excerpt": "1\thello\n2"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:0",
+    "body": {
+      "type": "reasoning",
+      "text": "This is simple—the file just contains \"hello\". I'll just summarize this in chat since no document was requested.\n\n"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": "`a.txt"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": "` has"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": " one line: the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": " word **\""
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": "hello\"**. It"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": " is"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": "n't t"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": "racked by"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "text": " git yet."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZeDbjjeHfKyi8JSYLi:1",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "`a.txt` has one line: the word **\"hello\"**. It isn't tracked by git yet."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

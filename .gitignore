@@ -1,13 +1,6 @@
 # Dependencies
 node_modules/
 
-# Runtime data
-.bo_staff/
-.agent-gateway/
-**/bo-staff.sqlite
-**/bo-staff.json
-**/.bo-staff.lock
-
 # Local tool state
 .claude/
 
@@ -35,6 +28,3 @@ Thumbs.db
 tmp/
 .tmp/
 *.tmp
-
-# Local notes
-naginata.md

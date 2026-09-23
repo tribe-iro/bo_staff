@@ -1,0 +1,351 @@
+[
+  {
+    "op": "upsert",
+    "key": "rs_03e3c5fab79078e1016ab3373d4a7487d28bcaddc55d8711c4",
+    "body": {
+      "type": "reasoning",
+      "text": "**Need to run**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": "I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": "’ll"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " run"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " command"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " read"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " first"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " response"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": " line"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "text": "."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_03e3c5fab79078e1016ab33740609087d2a1491785acbb587b",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I’ll run the command and read the first response line."
+        }
+      ],
+      "status": "completed"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-6a5b4116-23f2-437c-b7a3-7c7eac4de33b",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "/usr/bin/bash -lc 'curl -sI https://example.com'"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-6a5b4116-23f2-437c-b7a3-7c7eac4de33b",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "/usr/bin/bash -lc 'curl -sI https://example.com'"
+      },
+      "status": "failed",
+      "outcome": {
+        "exit_code": 6,
+        "excerpt": ""
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "rs_03e3c5fab79078e1016ab33741731487d2984bef20346d2683",
+    "body": {
+      "type": "reasoning",
+      "text": "**Checking network access**"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "curl"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " -"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "s"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " https"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "://"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "example"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": ".com"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "`"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " exited"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " with"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " code"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " "
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "6"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " produced"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " no"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " output"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": ","
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " so"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " there"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " was"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " no"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " HTTP"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " status"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " line"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " to"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " report"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "."
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " Curl"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " could"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " not"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " resolve"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": " host"
+  },
+  {
+    "op": "delta",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "text": "."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_03e3c5fab79078e1016ab337440bd887d2bcaf43dac2221553",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "`curl -sI https://example.com` exited with code 6 and produced no output, so there was no HTTP status line to report. Curl could not resolve the host."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

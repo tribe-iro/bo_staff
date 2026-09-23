@@ -1,0 +1,22 @@
+{"method":"remoteControl/status/changed","params":{}}
+{"method":"thread/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f"}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/started","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"mcpServer/startupStatus/updated","params":{}}
+{"method":"item/started","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"userMessage","id":"01a0cc10-1df3-76a1-9d07-e1b6484b3929"}}}
+{"method":"item/completed","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"userMessage","id":"01a0cc10-1df3-76a1-9d07-e1b6484b3929"}}}
+{"method":"item/started","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"reasoning","id":"rs_09e61b0b3d723183016ab337554fc887d2827a134d2056a5f1","summary":[],"content":[]}}}
+{"method":"item/reasoning/summaryPartAdded","params":{}}
+{"method":"item/reasoning/summaryTextDelta","params":{}}
+{"method":"item/completed","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"reasoning","id":"rs_09e61b0b3d723183016ab337554fc887d2827a134d2056a5f1","summary":["**Solving for x**"],"content":[]}}}
+{"method":"item/started","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"agentMessage","id":"msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0","text":""}}}
+{"method":"item/agentMessage/delta","params":{"itemId":"msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0","delta":"5"}}
+{"method":"item/completed","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","item":{"type":"agentMessage","id":"msg_09e61b0b3d723183016ab33757512087d2a90c2dbf72d61ca0","text":"5"}}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","tokenUsage":{"total":{"inputTokens":11687,"outputTokens":30,"cachedInputTokens":9344,"cacheWriteInputTokens":0,"reasoningOutputTokens":23}}}}
+{"method":"account/rateLimits/updated","params":{}}
+{"method":"thread/status/changed","params":{}}
+{"method":"turn/completed","params":{"threadId":"01a0cc10-1755-79a2-aa82-1864dea68a8f","turn":{"id":"01a0cc10-1786-7ac0-aa80-a5d8a080c7d9","status":"completed"}}}

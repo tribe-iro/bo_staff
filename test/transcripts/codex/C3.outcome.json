@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "data",
+    "data": {
+      "answer": "Paris."
+    }
+  },
+  "usage": {
+    "input_tokens": 11674,
+    "output_tokens": 16,
+    "cached_input_tokens": 9344
+  }
+}

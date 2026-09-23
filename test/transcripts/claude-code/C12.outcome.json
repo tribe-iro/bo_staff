@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "I called both tools. Here's what they returned:\n\n- **`integration_marker`** returned the string `MCP-MARKER-MISSING`. The call worked, but the value suggests no marker is set up for this test run.\n- **`other_tool`** didn't run. It failed with the error `tool not permitted`, so I have no value from it. That's a permission denial, so I didn't try it again. If you allow it in your permission settings, I can call it again.\n\nFour claude.ai connectors (Canva, Gmail, Google Calendar and Google Drive) need to be authorized in your claude.ai connector settings before they can be used. They aren't needed for this task."
+  },
+  "usage": {
+    "input_tokens": 72965,
+    "output_tokens": 447,
+    "cached_input_tokens": 59791,
+    "cost_usd": 0.1196792
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "I stopped counting at 2, as you asked. I got through 1 and 2 of the 30, each as its own `sleep 2 && echo N` command, and ran nothing after your message arrived.\n\nSeparately, the Canva, Gmail, Google Calendar and Google Drive connectors need to be authorized before they can be used. You can do that in your claude.ai connector settings."
+  },
+  "usage": {
+    "input_tokens": 72022,
+    "output_tokens": 385,
+    "cached_input_tokens": 58527,
+    "cost_usd": 0.12049740000000002
+  }
+}

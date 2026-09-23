@@ -1,0 +1,220 @@
+[
+  {
+    "op": "upsert",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": "I"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": "’ll"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " run"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " command"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " and"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " report"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " the"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " status"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " line"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " from"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " its"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": " response"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "text": "."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_00a791763f667d2b016ab33749474087d28a61fc268249c7ed",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "I’ll run the command and report the status line from its response."
+        }
+      ],
+      "status": "completed"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-27de0189-9ebc-41b3-a043-d5ab0361091f",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "/usr/bin/bash -lc 'curl -sI https://example.com'"
+      },
+      "status": "running"
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "exec-27de0189-9ebc-41b3-a043-d5ab0361091f",
+    "body": {
+      "type": "action",
+      "action": {
+        "kind": "shell",
+        "command": "/usr/bin/bash -lc 'curl -sI https://example.com'"
+      },
+      "status": "completed",
+      "outcome": {
+        "exit_code": 0,
+        "excerpt": "HTTP/2 200 \r\ndate: Wed, 23 Sep 2026 02:19:53 GMT\r\ncontent-type: text/html\r\nserver: cloudflare\r\nlast-modified: Tue, 22 Sep 2026 21:15:25 GMT\r\nallow: GET, HEAD\r\naccept-ranges: bytes\r\nage: 3252\r\ncf-cache-status: HIT\r\ncf-ray: a3f6112e1bcf83e9-GRU"
+      }
+    }
+  },
+  {
+    "op": "upsert",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "The"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " HTTP"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " status"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " line"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " is"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " `"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "HTTP"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "/"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "2"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": " "
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "200"
+  },
+  {
+    "op": "delta",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "text": "`."
+  },
+  {
+    "op": "upsert",
+    "key": "msg_00a791763f667d2b016ab3374b391c87d2bbd47dfe6b34e66e",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "The HTTP status line is `HTTP/2 200`."
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

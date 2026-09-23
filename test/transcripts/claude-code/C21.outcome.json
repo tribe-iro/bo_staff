@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "kind": "text",
+    "text": "5"
+  },
+  "usage": {
+    "input_tokens": 23198,
+    "output_tokens": 64,
+    "cached_input_tokens": 11977,
+    "cost_usd": 0.08663239999999998
+  }
+}

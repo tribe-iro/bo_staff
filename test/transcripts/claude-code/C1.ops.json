@@ -1,0 +1,55 @@
+[
+  {
+    "op": "session",
+    "native": "46961322-dcaa-4dfb-b9f2-4aee60fda96d"
+  },
+  {
+    "op": "model",
+    "id": "claude-opus-5-5[1m]"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZdrN3eezcttUmVwT2x:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": ""
+        }
+      ],
+      "status": "in_progress"
+    }
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZdrN3eezcttUmVwT2x:0",
+    "text": "Hi! How"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZdrN3eezcttUmVwT2x:0",
+    "text": " can I help you"
+  },
+  {
+    "op": "delta",
+    "key": "msg_011CfKZdrN3eezcttUmVwT2x:0",
+    "text": " today?"
+  },
+  {
+    "op": "upsert",
+    "key": "msg_011CfKZdrN3eezcttUmVwT2x:0",
+    "body": {
+      "type": "message",
+      "role": "agent",
+      "content": [
+        {
+          "kind": "text",
+          "text": "Hi! How can I help you today?"
+        }
+      ],
+      "status": "completed"
+    }
+  }
+]

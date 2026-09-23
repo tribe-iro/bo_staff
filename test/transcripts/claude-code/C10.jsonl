@@ -1,0 +1,53 @@
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"init","session_id":"00216f49-17fe-4a77-b0b3-2e10521b65c2","model":"claude-opus-5-5[1m]"}}
+{"message":{"type":"system","subtype":"status","session_id":"00216f49-17fe-4a77-b0b3-2e10521b65c2"}}
+{"message":{"type":"rate_limit_event"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZiKx6BLyZoPxypnUWE"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZiKx6BLyZoPxypnUWE","content":[{"type":"tool_use","id":"toolu_01LYnHRXj8rXv2ATCB1Vvqv2","name":"AskUserQuestion","input":{}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01LYnHRXj8rXv2ATCB1Vvqv2","content":"The user answered: \"Which color do you prefer?\"=\"blue\". Read the answers carefully — they may request clarification, changes, or that you not proceed — and follow what they actually say."}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"system","subtype":"status","session_id":"00216f49-17fe-4a77-b0b3-2e10521b65c2"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZiU5ygFs3vahkwAaor"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZiU5ygFs3vahkwAaor","content":[{"type":"tool_use","id":"toolu_01Nq2LQENi1xKuGV7V1x9SGW","name":"Write","input":{"file_path":"/tmp/bo-scratch-KkL6zL/repo/c.txt"}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01Nq2LQENi1xKuGV7V1x9SGW","content":"File created successfully at: /tmp/bo-scratch-KkL6zL/repo/c.txt (file state is current in your context — no need to Read it back)"}]}}}
+{"message":{"type":"system","subtype":"status","session_id":"00216f49-17fe-4a77-b0b3-2e10521b65c2"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZiZnHmWy4JAXX1SNw4"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"text"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"You picked bl"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ue, so I w"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"rote `blue` to `"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"c.txt`."}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZiZnHmWy4JAXX1SNw4","content":[{"type":"text","text":"You picked blue, so I wrote `blue` to `c.txt`."}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"result","subtype":"success","is_error":false,"result":"You picked blue, so I wrote `blue` to `c.txt`.","terminal_reason":"completed","total_cost_usd":0.11836759999999999,"modelUsage":{"claude-haiku-4-5-20251001":{"inputTokens":917,"outputTokens":11,"cacheReadInputTokens":0,"cacheCreationInputTokens":0},"claude-opus-5-5[1m]":{"inputTokens":6,"outputTokens":248,"cacheReadInputTokens":58578,"cacheCreationInputTokens":12587}}}}
+{"message":{"type":"command_lifecycle"}}

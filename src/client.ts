@@ -1,230 +1,203 @@
-import type { BomcpEnvelope } from "./bomcp/types.ts";
-import type {
-  ActiveExecutionResponse,
-  CancelExecutionResponse,
-  ExecutionRequest,
-  HealthResponse
-} from "./types.ts";
-import type { SyncRunResult } from "./api/sync-response.ts";
+// TypeScript SDK for bo /v1. Sugar (string input/workspace) is expanded here; the wire only sees canonical shapes.
 
-// ---------------------------------------------------------------------------
-// Options and errors
-// ---------------------------------------------------------------------------
+import type { EngineInfo, Item, Part, Response, Run, RunSpec, Session, StreamEvent } from "./model.ts";
+import { TERMINAL } from "./model.ts";
+import { isProblem, type Problem } from "./problems.ts";
 
-export interface BoClientOptions {
-  url?: string;
-  fetchImpl?: typeof fetch;
-}
+/** `RunSpec`, plus `input` and `workspace` as plain strings. */
+export type SugarSpec = Omit<RunSpec, "input" | "workspace"> & {
+  input: string | Part[];
+  workspace: string | RunSpec["workspace"];
+};
 
-export class BoStaffClientHttpError extends Error {
-  readonly status: number;
-  readonly body: unknown;
-  constructor(message: string, status: number, body: unknown) {
-    super(message);
-    this.name = "BoStaffClientHttpError";
-    this.status = status;
-    this.body = body;
+export class BoProblem extends Error {
+  readonly problem: Problem;
+  constructor(problem: Problem) {
+    super(`${problem.title}: ${problem.detail}`);
+    this.problem = problem;
   }
 }
 
-export class BoStaffClientStreamError extends Error {
-  readonly cause?: unknown;
-  constructor(message: string, cause?: unknown) {
-    super(message);
-    this.name = "BoStaffClientStreamError";
-    this.cause = cause;
-  }
-}
+const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000];
 
-// ---------------------------------------------------------------------------
-// Run options (Layer 0/1)
-// ---------------------------------------------------------------------------
+/** HTTP plumbing shared by `Bo` and `RunHandle`; not exported. */
+class Transport {
+  readonly url: string;
+  private readonly token?: string;
 
-export interface RunOptions {
-  backend?: string;
-  continuation?: { backend: string; token: string };
-  workspace?: string;
-  model?: string;
-  timeout?: number;
-  reasoning?: string;
-  objective?: string;
-  constraints?: string[];
-  context?: Record<string, unknown>;
-  attachments?: unknown[];
-  output?: Record<string, unknown>;
-  stream?: boolean;
-  verbose?: boolean;
-  metadata?: Record<string, unknown>;
-}
-
-// ---------------------------------------------------------------------------
-// BoClient — the ergonomic API
-// ---------------------------------------------------------------------------
-
-export class BoClient {
-  private readonly baseUrl: string;
-  private readonly fetchImpl: typeof fetch;
-
-  constructor(options: BoClientOptions = {}) {
-    this.baseUrl = (options.url ?? "http://127.0.0.1:3000").replace(/\/+$/, "");
-    this.fetchImpl = options.fetchImpl ?? fetch;
+  constructor(url: string, token: string | undefined) {
+    this.url = url.replace(/\/+$/, "");
+    this.token = token;
   }
 
-  // -------------------------------------------------------------------------
-  // Layer 0/1: sync run
-  // -------------------------------------------------------------------------
-
-  async run(prompt: string, opts: RunOptions = {}): Promise<SyncRunResult> {
-    const body = { prompt, ...opts, stream: false };
-    const response = await this.fetchImpl(`${this.baseUrl}/run`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+  async request<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
+    const res = await this.send(path, {
+      method,
+      headers: { ...this.auth(), ...(body === undefined ? {} : { "content-type": "application/json" }), ...headers },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    const text = await response.text();
-    if (!response.ok) {
-      throw new BoStaffClientHttpError(
-        extractHttpErrorMessage(text, response.status, response.statusText),
-        response.status,
-        parseMaybeJson(text),
-      );
-    }
-    return JSON.parse(text) as SyncRunResult;
+    if (!res.ok) throw await failureOf(res);
+    const text = await res.text();
+    return (text ? JSON.parse(text) : undefined) as T;
   }
 
-  // -------------------------------------------------------------------------
-  // Layer 0/1: streaming run
-  // -------------------------------------------------------------------------
-
-  async *stream(prompt: string, opts: RunOptions = {}): AsyncGenerator<BomcpEnvelope, void, void> {
-    const body = { prompt, ...opts, stream: true };
-    yield* this.streamNdjson(`${this.baseUrl}/run`, body);
+  async stream(path: string, headers: Record<string, string>, signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+    const res = await this.send(path, { headers: { ...this.auth(), accept: "text/event-stream", ...headers }, signal });
+    if (!res.ok || !res.body) throw await failureOf(res);
+    return res.body;
   }
 
-  // -------------------------------------------------------------------------
-  // Layer 2: direct streaming (full ExecutionRequest)
-  // -------------------------------------------------------------------------
-
-  async *executeStream(request: ExecutionRequest): AsyncGenerator<BomcpEnvelope, void, void> {
-    yield* this.streamNdjson(`${this.baseUrl}/executions/stream`, request);
-  }
-
-  // -------------------------------------------------------------------------
-  // Queries
-  // -------------------------------------------------------------------------
-
-  async getExecution(executionId: string): Promise<ActiveExecutionResponse | undefined> {
+  private async send(path: string, init: RequestInit): Promise<globalThis.Response> {
     try {
-      return await this.json<ActiveExecutionResponse>("GET", `/executions/${enc(executionId)}`);
+      return await fetch(`${this.url}${path}`, init);
     } catch (err) {
-      if (err instanceof BoStaffClientHttpError && err.status === 404) return undefined;
+      const cause = (err as { cause?: { code?: string } }).cause;
+      if (cause?.code === "ECONNREFUSED") throw new Error(`no bo server at ${this.url}; start one with \`bo serve\``);
       throw err;
     }
   }
 
-  async cancelExecution(executionId: string): Promise<CancelExecutionResponse> {
-    return this.json<CancelExecutionResponse>("POST", `/executions/${enc(executionId)}/cancel`);
+  private auth(): Record<string, string> {
+    return this.token ? { authorization: `Bearer ${this.token}` } : {};
+  }
+}
+
+/** A `BoProblem` for problem+json bodies; otherwise a plain error that never leaks a parser failure. */
+async function failureOf(res: globalThis.Response): Promise<Error> {
+  const text = await res.text().catch(() => "");
+  let parsed: unknown;
+  try { parsed = text ? JSON.parse(text) : undefined; } catch { parsed = undefined; }
+  return isProblem(parsed) ? new BoProblem(parsed) : new Error(`${res.status} ${text.slice(0, 200)}`.trim());
+}
+
+export class Bo {
+  private readonly transport: Transport;
+
+  constructor(opts: { url?: string; token?: string } = {}) {
+    this.transport = new Transport(opts.url ?? process.env.BO_URL ?? "http://127.0.0.1:3000", opts.token ?? process.env.BO_TOKEN);
   }
 
-  async health(): Promise<HealthResponse> {
-    return this.json<HealthResponse>("GET", "/health");
+  get url(): string {
+    return this.transport.url;
   }
 
-  // -------------------------------------------------------------------------
-  // Internal
-  // -------------------------------------------------------------------------
-
-  private async json<T = unknown>(method: string, pathname: string, body?: unknown): Promise<T> {
-    const response = await this.fetchImpl(`${this.baseUrl}${pathname}`, {
-      method,
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    const text = await response.text();
-    const parsed = parseMaybeJson(text);
-    if (!response.ok) {
-      throw new BoStaffClientHttpError(
-        isErrorBody(parsed) ? parsed.error.message : (text.trim() || `${response.status} ${response.statusText}`),
-        response.status,
-        parsed,
-      );
-    }
-    return parsed as T;
+  engines(): Promise<EngineInfo[]> {
+    return this.transport.request("GET", "/v1/engines");
   }
 
-  private async *streamNdjson(url: string, body: unknown): AsyncGenerator<BomcpEnvelope, void, void> {
-    const response = await this.fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok || !response.body) {
-      const text = await response.text();
-      throw new BoStaffClientHttpError(
-        extractHttpErrorMessage(text, response.status, response.statusText),
-        response.status,
-        parseMaybeJson(text),
-      );
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let nl = buffer.indexOf("\n");
-        while (nl >= 0) {
-          const line = buffer.slice(0, nl).trim();
-          buffer = buffer.slice(nl + 1);
-          if (line) yield parseEnvelope(line);
-          nl = buffer.indexOf("\n");
+  async run(spec: SugarSpec, opts: { idempotencyKey?: string } = {}): Promise<RunHandle> {
+    const run = await this.transport.request<Run>("POST", "/v1/runs", expand(spec), opts.idempotencyKey ? { "idempotency-key": opts.idempotencyKey } : {});
+    return new RunHandle(this.transport, run);
+  }
+
+  readonly runs = {
+    get: async (id: string): Promise<RunHandle> => new RunHandle(this.transport, await this.transport.request<Run>("GET", runPath(id))),
+    list: (): Promise<Run[]> => this.transport.request("GET", "/v1/runs"),
+  };
+
+  readonly sessions = {
+    /** Newest first; one workspace (an absolute path on the server's machine), or all. */
+    list: (workspace?: string): Promise<Session[]> =>
+      this.transport.request("GET", `/v1/sessions${workspace ? `?workspace=${encodeURIComponent(workspace)}` : ""}`),
+  };
+}
+
+export class RunHandle {
+  readonly id: string;
+  run: Run;
+  private readonly transport: Transport;
+
+  constructor(transport: Transport, run: Run) {
+    this.transport = transport;
+    this.id = run.id;
+    this.run = run;
+  }
+
+  /** Server-sent events, resuming with Last-Event-ID across disconnects (5 attempts, exponential backoff). */
+  async *events(opts: { after?: number; signal?: AbortSignal } = {}): AsyncGenerator<StreamEvent> {
+    let last = opts.after ?? 0;
+    let attempt = 0;
+    for (;;) {
+      try {
+        const body = await this.transport.stream(`${runPath(this.id)}/events`, last ? { "last-event-id": String(last) } : {}, opts.signal);
+        for await (const e of parseSse(body)) {
+          attempt = 0;
+          if ("id" in e) last = e.id;
+          if (e.event === "run") this.run = e.data;
+          yield e;
+          if (e.event === "run" && TERMINAL.has(e.data.status)) return;
         }
+      } catch (err) {
+        if (err instanceof BoProblem || opts.signal?.aborted || attempt >= BACKOFF_MS.length) throw err;
       }
-      const remainder = buffer.trim();
-      if (remainder) yield parseEnvelope(remainder);
-    } catch (err) {
-      if (err instanceof BoStaffClientStreamError) throw err;
-      throw new BoStaffClientStreamError("Failed while reading stream", err);
+      await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt++] ?? BACKOFF_MS.at(-1)));
     }
+  }
+
+  /** Drains events and returns the terminal Run. */
+  async done(opts: { signal?: AbortSignal; onItem?: (item: Item, run: RunHandle) => void | Promise<void> } = {}): Promise<Run> {
+    for await (const e of this.events(opts)) {
+      if (e.event === "item" && opts.onItem) await opts.onItem(e.data, this);
+    }
+    return this.run;
+  }
+
+  message(content: string | Part[]): Promise<void> {
+    return this.transport.request("POST", `${runPath(this.id)}/messages`, { content: typeof content === "string" ? [{ kind: "text", text: content }] : content });
+  }
+
+  respond(itemId: string, response: Response): Promise<void> {
+    return this.transport.request("POST", `${runPath(this.id)}/items/${encodeURIComponent(itemId)}/response`, response);
+  }
+
+  cancel(): Promise<void> {
+    return this.transport.request("POST", `${runPath(this.id)}/cancel`);
   }
 }
 
-// ---------------------------------------------------------------------------
-// Factory
-// ---------------------------------------------------------------------------
-
-export function createBo(opts?: BoClientOptions): BoClient {
-  return new BoClient(opts);
+function runPath(id: string): string {
+  return `/v1/runs/${encodeURIComponent(id)}`;
 }
 
-// Convenience aliases
-export { BoClient as BoStaffClient };
-export type { BoClientOptions as BoStaffClientOptions };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function enc(s: string): string {
-  return encodeURIComponent(s);
+export function expand(spec: SugarSpec): RunSpec {
+  return {
+    ...spec,
+    input: typeof spec.input === "string" ? [{ kind: "text", text: spec.input }] : spec.input,
+    workspace: typeof spec.workspace === "string" ? { root: spec.workspace } : spec.workspace,
+  };
 }
 
-function extractHttpErrorMessage(text: string, status: number, statusText: string): string {
-  const parsed = parseMaybeJson(text);
-  return isErrorBody(parsed) ? parsed.error.message : (text.trim() || `${status} ${statusText}`);
-}
-
-function parseMaybeJson(text: string): unknown {
-  if (!text.trim()) return null;
-  try { return JSON.parse(text); } catch { return { error: { code: "invalid_json_response", message: text.trim() } }; }
-}
-
-function isErrorBody(value: unknown): value is { error: { message: string } } {
-  return Boolean(value) && typeof value === "object" && typeof (value as { error?: { message?: unknown } }).error?.message === "string";
-}
-
-function parseEnvelope(line: string): BomcpEnvelope {
-  try { return JSON.parse(line) as BomcpEnvelope; } catch (err) { throw new BoStaffClientStreamError(`Malformed NDJSON envelope: ${line.slice(0, 200)}`, err); }
+/** Minimal SSE parser (id/event/data fields, comment lines ignored). */
+export async function* parseSse(body: ReadableStream<Uint8Array>): AsyncGenerator<StreamEvent> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let id: number | undefined;
+  let event = "message";
+  let data: string[] = [];
+  for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
+    buffer += decoder.decode(chunk, { stream: true });
+    let start = 0;
+    for (let nl = buffer.indexOf("\n", start); nl >= 0; nl = buffer.indexOf("\n", start)) {
+      const line = buffer.charCodeAt(nl - 1) === 13 ? buffer.slice(start, nl - 1) : buffer.slice(start, nl);
+      start = nl + 1;
+      if (line === "") {
+        if (data.length) {
+          const payload = JSON.parse(data.join("\n")) as unknown;
+          yield (id === undefined ? { event, data: payload } : { event, id, data: payload }) as StreamEvent;
+        }
+        id = undefined; event = "message"; data = [];
+      } else if (line.startsWith(":")) {
+        continue;
+      } else {
+        const colon = line.indexOf(":");
+        const field = colon < 0 ? line : line.slice(0, colon);
+        const value = colon < 0 ? "" : line.slice(colon + (line.charCodeAt(colon + 1) === 32 ? 2 : 1));
+        if (field === "id") id = Number(value);
+        else if (field === "event") event = value;
+        else if (field === "data") data.push(value);
+      }
+    }
+    // One slice per chunk instead of one per line.
+    buffer = buffer.slice(start);
+  }
 }

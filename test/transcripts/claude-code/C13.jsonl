@@ -1,0 +1,50 @@
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"init","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18","model":"claude-opus-5-5[1m]"}}
+{"message":{"type":"system","subtype":"status","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"rate_limit_event"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_start","message":{"id":"msg_011CfKZkSoeW9gTUoRnFJ7ic"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":0,"content_block":{"type":"thinking"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta"}}}}
+{"message":{"type":"system","subtype":"thinking_tokens","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZkSoeW9gTUoRnFJ7ic","content":[{"type":"thinking","thinking":"Since foreground sleep commands are blocked, and the user explicitly wants sleep 60 run, I'll use the background execution option instead.\n\n"}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":0}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_start","index":1,"content_block":{"type":"tool_use"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta"}}}}
+{"message":{"type":"assistant","parent_tool_use_id":null,"message":{"id":"msg_011CfKZkSoeW9gTUoRnFJ7ic","content":[{"type":"tool_use","id":"toolu_01FMkKhoqR3d7TCQFmjHmYPS","name":"Bash","input":{"command":"sleep 60"}}]}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"content_block_stop","index":1}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_delta"}}}
+{"message":{"type":"stream_event","parent_tool_use_id":null,"event":{"type":"message_stop"}}}
+{"message":{"type":"system","subtype":"background_tasks_changed","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"system","subtype":"task_started","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"toolu_01FMkKhoqR3d7TCQFmjHmYPS","is_error":false,"content":"Command running in background with ID: bi7vos3gf. Output is being written to: /tmp/claude-1000/-tmp-bo-scratch-0HVoDh-repo/486b0aab-f522-455b-8d83-91b7e1c40e18/tasks/bi7vos3gf.output. You will be notified when it completes. To check interim output, use Read on that file path."}]}}}
+{"message":{"type":"system","subtype":"status","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"[Request interrupted by user]"}]}}}
+{"message":{"type":"result","subtype":"error_during_execution","is_error":true,"terminal_reason":"aborted_streaming","total_cost_usd":0.0683766,"modelUsage":{"claude-haiku-4-5-20251001":{"inputTokens":898,"outputTokens":11,"cacheReadInputTokens":0,"cacheCreationInputTokens":0},"claude-opus-5-5[1m]":{"inputTokens":2,"outputTokens":149,"cacheReadInputTokens":11698,"cacheCreationInputTokens":7762}}}}
+{"message":{"type":"command_lifecycle"}}
+{"message":{"type":"system","subtype":"background_tasks_changed","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"system","subtype":"task_updated","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
+{"message":{"type":"system","subtype":"task_notification","session_id":"486b0aab-f522-455b-8d83-91b7e1c40e18"}}
