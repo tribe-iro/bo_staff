@@ -5,8 +5,8 @@
     "text": "I said, “Hi!”"
   },
   "usage": {
-    "input_tokens": 25727,
-    "output_tokens": 16,
-    "cached_input_tokens": 21120
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

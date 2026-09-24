@@ -1,0 +1,3897 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:bo:contract:v1",
+  "title": "bo contract v1",
+  "description": "Every public shape of bo. Unions discriminated by a tag use `oneOf` with the OpenAPI `discriminator` keyword.",
+  "definitions": {
+    "RunSpec": {
+      "type": "object",
+      "required": [
+        "input",
+        "workspace"
+      ],
+      "properties": {
+        "input": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "image",
+                  "data"
+                ]
+              }
+            },
+            "discriminator": {
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "text"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "text"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "path",
+                  "media_type"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "image"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^/",
+                    "description": "a file of at most 5 MiB on the server's machine"
+                  },
+                  "media_type": {
+                    "type": "string",
+                    "enum": [
+                      "image/png",
+                      "image/jpeg",
+                      "image/gif",
+                      "image/webp"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "data"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "data"
+                  },
+                  "data": {
+                    "description": "any JSON; at most 262144 characters serialized"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "workspace": {
+          "type": "object",
+          "required": [
+            "root"
+          ],
+          "properties": {
+            "root": {
+              "type": "string",
+              "pattern": "^/",
+              "description": "an existing directory"
+            },
+            "extra_roots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^/"
+              },
+              "maxItems": 16,
+              "description": "directories outside the root the run may also use"
+            }
+          },
+          "additionalProperties": false
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "a model id or alias from GET /v1/engines"
+        },
+        "effort": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "one of the selected model's efforts in GET /v1/engines"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "project_instructions": {
+          "type": "boolean",
+          "description": "include the root's AGENTS.md and CLAUDE.md (default true)"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "a directory containing SKILL.md"
+          },
+          "maxItems": 32
+        },
+        "mcp": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "object",
+            "if": {
+              "properties": {
+                "command": {}
+              },
+              "required": [
+                "command"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "required": [
+                "command"
+              ],
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "args": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "env": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^.*$": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "an enforced allowlist of the server's tools"
+                }
+              },
+              "additionalProperties": false
+            },
+            "else": {
+              "type": "object",
+              "required": [
+                "url"
+              ],
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "headers": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^.*$": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "an enforced allowlist of the server's tools"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "subagents": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9-]{1,64}$"
+          },
+          "maxProperties": 16,
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "description",
+              "instructions"
+            ],
+            "properties": {
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "instructions": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "effort": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "one of the subagent's model's efforts (its model, else the run's, else the default)"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "access": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write",
+                "full"
+              ]
+            },
+            "internet": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "interactive": {
+          "type": "boolean"
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "variables for the engine and its tools; BO_* names are reserved"
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "max_turns": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "description": "the agent's own model calls"
+            },
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000000,
+              "description": "input (cached included) and output tokens of every model call, subagents included"
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "type": "object",
+          "required": [
+            "schema"
+          ],
+          "properties": {
+            "schema": {
+              "type": "object",
+              "patternProperties": {
+                "^.*$": {}
+              },
+              "description": "a draft-07 JSON Schema of type object, at most 64 KiB"
+            }
+          },
+          "additionalProperties": false
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "a session id issued by bo"
+            },
+            "latest": {
+              "type": "boolean",
+              "const": true,
+              "description": "this workspace's latest session (for engine, when set)"
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,128}$",
+              "description": "the session with this caller-chosen key in this workspace, started (with the key) if there is none"
+            },
+            "fork": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false,
+          "description": "continue a session: exactly one of id, latest or key"
+        },
+        "timeout_s": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        }
+      },
+      "additionalProperties": false
+    },
+    "MessageBody": {
+      "type": "object",
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "image",
+                  "data"
+                ]
+              }
+            },
+            "discriminator": {
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "text"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "text"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "path",
+                  "media_type"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "image"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^/",
+                    "description": "a file of at most 5 MiB on the server's machine"
+                  },
+                  "media_type": {
+                    "type": "string",
+                    "enum": [
+                      "image/png",
+                      "image/jpeg",
+                      "image/gif",
+                      "image/webp"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "data"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "data"
+                  },
+                  "data": {
+                    "description": "any JSON; at most 262144 characters serialized"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "ResponseBody": {
+      "type": "object",
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "allow_for_run",
+            "deny"
+          ]
+        },
+        "answers": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "exactly one of decision (an action) or answers (a question)"
+    },
+    "InputPart": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "text",
+            "image",
+            "data"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path",
+            "media_type"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "image"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/",
+              "description": "a file of at most 5 MiB on the server's machine"
+            },
+            "media_type": {
+              "type": "string",
+              "enum": [
+                "image/png",
+                "image/jpeg",
+                "image/gif",
+                "image/webp"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "data"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "data"
+            },
+            "data": {
+              "description": "any JSON; at most 262144 characters serialized"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Part": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "text",
+            "image",
+            "data"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "path",
+            "media_type"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "image"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/",
+              "description": "a file of at most 5 MiB on the server's machine"
+            },
+            "media_type": {
+              "type": "string",
+              "enum": [
+                "image/png",
+                "image/jpeg",
+                "image/gif",
+                "image/webp"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "data"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "data"
+            },
+            "data": {
+              "description": "any JSON; at most 262144 characters serialized"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ResultPart": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "text",
+            "data"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "data"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "data"
+            },
+            "data": {
+              "description": "any JSON; at most 262144 characters serialized"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "McpServer": {
+      "type": "object",
+      "if": {
+        "properties": {
+          "command": {}
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": {
+                "type": "string"
+              }
+            }
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "an enforced allowlist of the server's tools"
+          }
+        },
+        "additionalProperties": false
+      },
+      "else": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "headers": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": {
+                "type": "string"
+              }
+            }
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "an enforced allowlist of the server's tools"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "Subagent": {
+      "type": "object",
+      "required": [
+        "description",
+        "instructions"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "effort": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "one of the subagent's model's efforts (its model, else the run's, else the default)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Usage": {
+      "type": "object",
+      "required": [
+        "input_tokens",
+        "output_tokens",
+        "cached_input_tokens"
+      ],
+      "properties": {
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cached_input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "Run": {
+      "type": "object",
+      "required": [
+        "id",
+        "session_id",
+        "status",
+        "engine",
+        "model",
+        "created_at",
+        "usage"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "running",
+            "waiting",
+            "completed",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "engine": {
+          "type": "object",
+          "required": [
+            "id",
+            "version"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": [
+                "claude-code",
+                "codex"
+              ]
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "result": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "text",
+                "data"
+              ]
+            }
+          },
+          "discriminator": {
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "text"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "text"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "data"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "data"
+                },
+                "data": {
+                  "description": "any JSON; at most 262144 characters serialized"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "auth_failed",
+                "rate_limited",
+                "context_exceeded",
+                "timeout",
+                "invalid_output",
+                "limit_exceeded",
+                "resource_exhausted",
+                "engine_unavailable",
+                "engine_error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string",
+              "description": "what it concerns: the failing field of structured output, or the limit reached (/limits/max_turns, /limits/max_tokens)"
+            }
+          },
+          "additionalProperties": false
+        },
+        "usage": {
+          "type": "object",
+          "required": [
+            "input_tokens",
+            "output_tokens",
+            "cached_input_tokens"
+          ],
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "output_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cached_input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cost_usd": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Action": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "shell",
+            "read",
+            "edit",
+            "search",
+            "web",
+            "mcp",
+            "delegate",
+            "skill",
+            "other"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "command"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "shell"
+            },
+            "command": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "paths"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "read"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "changes"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "edit"
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "change"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "change": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "modify",
+                      "delete"
+                    ]
+                  },
+                  "diff": {
+                    "type": "string",
+                    "description": "unified hunks without file headers (@@ -a,b +c,d @@, or @@ @@ while line numbers are unknown); at most 64 KiB, then the line `\\ diff truncated`"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "query"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "search"
+            },
+            "query": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "web"
+            },
+            "url": {
+              "type": "string"
+            },
+            "query": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "server",
+            "tool"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "mcp"
+            },
+            "server": {
+              "type": "string"
+            },
+            "tool": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "task"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "delegate"
+            },
+            "subagent": {
+              "type": "string"
+            },
+            "task": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "skill"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "other"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Question": {
+      "type": "object",
+      "required": [
+        "id",
+        "text",
+        "multiple"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "multiple": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Item": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "message",
+            "reasoning",
+            "plan",
+            "action",
+            "question",
+            "notice"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "role",
+            "content",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "message"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "user",
+                "agent"
+              ]
+            },
+            "content": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "image",
+                      "data"
+                    ]
+                  }
+                },
+                "discriminator": {
+                  "propertyName": "kind"
+                },
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "text"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "text"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "path",
+                      "media_type"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "image"
+                      },
+                      "path": {
+                        "type": "string",
+                        "pattern": "^/",
+                        "description": "a file of at most 5 MiB on the server's machine"
+                      },
+                      "media_type": {
+                        "type": "string",
+                        "enum": [
+                          "image/png",
+                          "image/jpeg",
+                          "image/gif",
+                          "image/webp"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "data"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "data"
+                      },
+                      "data": {
+                        "description": "any JSON; at most 262144 characters serialized"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "in_progress",
+                "completed"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "text"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "reasoning"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "steps"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "plan"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "status"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "action",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "action"
+            },
+            "action": {
+              "type": "object",
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "shell",
+                    "read",
+                    "edit",
+                    "search",
+                    "web",
+                    "mcp",
+                    "delegate",
+                    "skill",
+                    "other"
+                  ]
+                }
+              },
+              "discriminator": {
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "command"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "shell"
+                    },
+                    "command": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "paths"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "read"
+                    },
+                    "paths": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "changes"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "edit"
+                    },
+                    "changes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "path",
+                          "change"
+                        ],
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "change": {
+                            "type": "string",
+                            "enum": [
+                              "add",
+                              "modify",
+                              "delete"
+                            ]
+                          },
+                          "diff": {
+                            "type": "string",
+                            "description": "unified hunks without file headers (@@ -a,b +c,d @@, or @@ @@ while line numbers are unknown); at most 64 KiB, then the line `\\ diff truncated`"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "query"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "search"
+                    },
+                    "query": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "web"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "server",
+                    "tool"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "mcp"
+                    },
+                    "server": {
+                      "type": "string"
+                    },
+                    "tool": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "task"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "delegate"
+                    },
+                    "subagent": {
+                      "type": "string"
+                    },
+                    "task": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "name"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "skill"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "name"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "other"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "awaiting_approval",
+                "running",
+                "completed",
+                "failed",
+                "denied"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "outcome": {
+              "type": "object",
+              "properties": {
+                "exit_code": {
+                  "type": "integer"
+                },
+                "excerpt": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "questions",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "question"
+            },
+            "questions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "text",
+                  "multiple"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "multiple": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "awaiting_answer",
+                "answered",
+                "expired"
+              ]
+            },
+            "answers": {
+              "type": "object",
+              "patternProperties": {
+                "^.*$": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "created_at",
+            "type",
+            "level",
+            "text"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "the delegate action a subagent's item belongs to"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": {
+              "type": "string",
+              "const": "notice"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "info",
+                "warning"
+              ]
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Session": {
+      "type": "object",
+      "required": [
+        "id",
+        "engine",
+        "workspace",
+        "title",
+        "model",
+        "runs",
+        "usage",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex"
+          ]
+        },
+        "workspace": {
+          "type": "string",
+          "description": "the workspace root"
+        },
+        "title": {
+          "type": "string",
+          "description": "the first line of the prompt that started it"
+        },
+        "key": {
+          "type": "string",
+          "description": "the caller-chosen key, when it was started with one"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "usage": {
+          "type": "object",
+          "required": [
+            "input_tokens",
+            "output_tokens",
+            "cached_input_tokens"
+          ],
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "output_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cached_input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cost_usd": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SessionRun": {
+      "type": "object",
+      "required": [
+        "run",
+        "items"
+      ],
+      "properties": {
+        "run": {
+          "type": "object",
+          "required": [
+            "id",
+            "session_id",
+            "status",
+            "engine",
+            "model",
+            "created_at",
+            "usage"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "session_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "running",
+                "waiting",
+                "completed",
+                "failed",
+                "cancelled"
+              ]
+            },
+            "engine": {
+              "type": "object",
+              "required": [
+                "id",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "enum": [
+                    "claude-code",
+                    "codex"
+                  ]
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "ended_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "result": {
+              "type": "object",
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "data"
+                  ]
+                }
+              },
+              "discriminator": {
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "text"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "text"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "data"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "data"
+                    },
+                    "data": {
+                      "description": "any JSON; at most 262144 characters serialized"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "error": {
+              "type": "object",
+              "required": [
+                "code",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "enum": [
+                    "auth_failed",
+                    "rate_limited",
+                    "context_exceeded",
+                    "timeout",
+                    "invalid_output",
+                    "limit_exceeded",
+                    "resource_exhausted",
+                    "engine_unavailable",
+                    "engine_error"
+                  ]
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "what it concerns: the failing field of structured output, or the limit reached (/limits/max_turns, /limits/max_tokens)"
+                }
+              },
+              "additionalProperties": false
+            },
+            "usage": {
+              "type": "object",
+              "required": [
+                "input_tokens",
+                "output_tokens",
+                "cached_input_tokens"
+              ],
+              "properties": {
+                "input_tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "output_tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cached_input_tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cost_usd": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "message",
+                  "reasoning",
+                  "plan",
+                  "action",
+                  "question",
+                  "notice"
+                ]
+              }
+            },
+            "discriminator": {
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "role",
+                  "content",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "message"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "agent"
+                    ]
+                  },
+                  "content": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "kind"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "image",
+                            "data"
+                          ]
+                        }
+                      },
+                      "discriminator": {
+                        "propertyName": "kind"
+                      },
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "text"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "text"
+                            },
+                            "text": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "path",
+                            "media_type"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "image"
+                            },
+                            "path": {
+                              "type": "string",
+                              "pattern": "^/",
+                              "description": "a file of at most 5 MiB on the server's machine"
+                            },
+                            "media_type": {
+                              "type": "string",
+                              "enum": [
+                                "image/png",
+                                "image/jpeg",
+                                "image/gif",
+                                "image/webp"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "data"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "data"
+                            },
+                            "data": {
+                              "description": "any JSON; at most 262144 characters serialized"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress",
+                      "completed"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "text"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "reasoning"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "steps"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "plan"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "text",
+                        "status"
+                      ],
+                      "properties": {
+                        "text": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "in_progress",
+                            "completed"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "action",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "action"
+                  },
+                  "action": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "shell",
+                          "read",
+                          "edit",
+                          "search",
+                          "web",
+                          "mcp",
+                          "delegate",
+                          "skill",
+                          "other"
+                        ]
+                      }
+                    },
+                    "discriminator": {
+                      "propertyName": "kind"
+                    },
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "command"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "shell"
+                          },
+                          "command": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "paths"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "read"
+                          },
+                          "paths": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "changes"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "edit"
+                          },
+                          "changes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "path",
+                                "change"
+                              ],
+                              "properties": {
+                                "path": {
+                                  "type": "string"
+                                },
+                                "change": {
+                                  "type": "string",
+                                  "enum": [
+                                    "add",
+                                    "modify",
+                                    "delete"
+                                  ]
+                                },
+                                "diff": {
+                                  "type": "string",
+                                  "description": "unified hunks without file headers (@@ -a,b +c,d @@, or @@ @@ while line numbers are unknown); at most 64 KiB, then the line `\\ diff truncated`"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "query"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "search"
+                          },
+                          "query": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "web"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "query": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "server",
+                          "tool"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "mcp"
+                          },
+                          "server": {
+                            "type": "string"
+                          },
+                          "tool": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "task"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "delegate"
+                          },
+                          "subagent": {
+                            "type": "string"
+                          },
+                          "task": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "name"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "skill"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "name"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "other"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "awaiting_approval",
+                      "running",
+                      "completed",
+                      "failed",
+                      "denied"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "object",
+                    "properties": {
+                      "exit_code": {
+                        "type": "integer"
+                      },
+                      "excerpt": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "questions",
+                  "status"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "question"
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "text",
+                        "multiple"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "multiple": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "awaiting_answer",
+                      "answered",
+                      "expired"
+                    ]
+                  },
+                  "answers": {
+                    "type": "object",
+                    "patternProperties": {
+                      "^.*$": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "created_at",
+                  "type",
+                  "level",
+                  "text"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "string",
+                    "description": "the delegate action a subagent's item belongs to"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "notice"
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "info",
+                      "warning"
+                    ]
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelInfo": {
+      "type": "object",
+      "required": [
+        "id",
+        "aliases",
+        "default",
+        "efforts",
+        "images"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "canonical; aliases resolve to it"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default": {
+          "type": "boolean"
+        },
+        "efforts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "images": {
+          "type": "boolean",
+          "description": "accepts image input"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EngineInfo": {
+      "type": "object",
+      "required": [
+        "id",
+        "available",
+        "authentication",
+        "models"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "codex"
+          ]
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "authentication": {
+          "type": "string",
+          "enum": [
+            "api_key",
+            "cloud_provider",
+            "subscription",
+            "none"
+          ]
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "aliases",
+              "default",
+              "efforts",
+              "images"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "canonical; aliases resolve to it"
+              },
+              "aliases": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "default": {
+                "type": "boolean"
+              },
+              "efforts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "images": {
+                "type": "boolean",
+                "description": "accepts image input"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "StreamEvent": {
+      "type": "object",
+      "required": [
+        "event"
+      ],
+      "properties": {
+        "event": {
+          "type": "string",
+          "enum": [
+            "run",
+            "item",
+            "delta"
+          ]
+        }
+      },
+      "discriminator": {
+        "propertyName": "event"
+      },
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "event",
+            "id",
+            "data"
+          ],
+          "properties": {
+            "event": {
+              "type": "string",
+              "const": "run"
+            },
+            "id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "id",
+                "session_id",
+                "status",
+                "engine",
+                "model",
+                "created_at",
+                "usage"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "session_id": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "running",
+                    "waiting",
+                    "completed",
+                    "failed",
+                    "cancelled"
+                  ]
+                },
+                "engine": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "enum": [
+                        "claude-code",
+                        "codex"
+                      ]
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "model": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ended_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "result": {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "data"
+                      ]
+                    }
+                  },
+                  "discriminator": {
+                    "propertyName": "kind"
+                  },
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "text"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "text"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "data"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "data"
+                        },
+                        "data": {
+                          "description": "any JSON; at most 262144 characters serialized"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "error": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "auth_failed",
+                        "rate_limited",
+                        "context_exceeded",
+                        "timeout",
+                        "invalid_output",
+                        "limit_exceeded",
+                        "resource_exhausted",
+                        "engine_unavailable",
+                        "engine_error"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string",
+                      "description": "what it concerns: the failing field of structured output, or the limit reached (/limits/max_turns, /limits/max_tokens)"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "usage": {
+                  "type": "object",
+                  "required": [
+                    "input_tokens",
+                    "output_tokens",
+                    "cached_input_tokens"
+                  ],
+                  "properties": {
+                    "input_tokens": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "output_tokens": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cached_input_tokens": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cost_usd": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "event",
+            "id",
+            "data"
+          ],
+          "properties": {
+            "event": {
+              "type": "string",
+              "const": "item"
+            },
+            "id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "message",
+                    "reasoning",
+                    "plan",
+                    "action",
+                    "question",
+                    "notice"
+                  ]
+                }
+              },
+              "discriminator": {
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "role",
+                    "content",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "message"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "user",
+                        "agent"
+                      ]
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "kind"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "image",
+                              "data"
+                            ]
+                          }
+                        },
+                        "discriminator": {
+                          "propertyName": "kind"
+                        },
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "text"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "text"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "path",
+                              "media_type"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "image"
+                              },
+                              "path": {
+                                "type": "string",
+                                "pattern": "^/",
+                                "description": "a file of at most 5 MiB on the server's machine"
+                              },
+                              "media_type": {
+                                "type": "string",
+                                "enum": [
+                                  "image/png",
+                                  "image/jpeg",
+                                  "image/gif",
+                                  "image/webp"
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "kind",
+                              "data"
+                            ],
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "data"
+                              },
+                              "data": {
+                                "description": "any JSON; at most 262144 characters serialized"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "in_progress",
+                        "completed"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "text"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "reasoning"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "steps"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "plan"
+                    },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "text",
+                          "status"
+                        ],
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "in_progress",
+                              "completed"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "action",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "action"
+                    },
+                    "action": {
+                      "type": "object",
+                      "required": [
+                        "kind"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "shell",
+                            "read",
+                            "edit",
+                            "search",
+                            "web",
+                            "mcp",
+                            "delegate",
+                            "skill",
+                            "other"
+                          ]
+                        }
+                      },
+                      "discriminator": {
+                        "propertyName": "kind"
+                      },
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "command"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "shell"
+                            },
+                            "command": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "paths"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "read"
+                            },
+                            "paths": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "changes"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "edit"
+                            },
+                            "changes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "path",
+                                  "change"
+                                ],
+                                "properties": {
+                                  "path": {
+                                    "type": "string"
+                                  },
+                                  "change": {
+                                    "type": "string",
+                                    "enum": [
+                                      "add",
+                                      "modify",
+                                      "delete"
+                                    ]
+                                  },
+                                  "diff": {
+                                    "type": "string",
+                                    "description": "unified hunks without file headers (@@ -a,b +c,d @@, or @@ @@ while line numbers are unknown); at most 64 KiB, then the line `\\ diff truncated`"
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "query"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "search"
+                            },
+                            "query": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "web"
+                            },
+                            "url": {
+                              "type": "string"
+                            },
+                            "query": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "server",
+                            "tool"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "mcp"
+                            },
+                            "server": {
+                              "type": "string"
+                            },
+                            "tool": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "task"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "delegate"
+                            },
+                            "subagent": {
+                              "type": "string"
+                            },
+                            "task": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "name"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "skill"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "name"
+                          ],
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "other"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_approval",
+                        "running",
+                        "completed",
+                        "failed",
+                        "denied"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "outcome": {
+                      "type": "object",
+                      "properties": {
+                        "exit_code": {
+                          "type": "integer"
+                        },
+                        "excerpt": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "questions",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "question"
+                    },
+                    "questions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "text",
+                          "multiple"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "options": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "multiple": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_answer",
+                        "answered",
+                        "expired"
+                      ]
+                    },
+                    "answers": {
+                      "type": "object",
+                      "patternProperties": {
+                        "^.*$": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "created_at",
+                    "type",
+                    "level",
+                    "text"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parent_id": {
+                      "type": "string",
+                      "description": "the delegate action a subagent's item belongs to"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "notice"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "info",
+                        "warning"
+                      ]
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "event",
+            "data"
+          ],
+          "properties": {
+            "event": {
+              "type": "string",
+              "const": "delta"
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "item_id",
+                "offset",
+                "text"
+              ],
+              "properties": {
+                "item_id": {
+                  "type": "string"
+                },
+                "offset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "where `text` starts in the item's streamed text, in Unicode code points"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false,
+          "description": "Text streamed into an item since its latest version. Not logged, so it has no id; on (re)connect the text so far arrives as one delta at offset 0: append the part past what you already have."
+        }
+      ]
+    },
+    "FieldError": {
+      "type": "object",
+      "required": [
+        "pointer",
+        "detail"
+      ],
+      "properties": {
+        "pointer": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Problem": {
+      "type": "object",
+      "required": [
+        "type",
+        "title",
+        "status",
+        "detail"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "urn:bo:problem:<name>"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "pointer",
+              "detail"
+            ],
+            "properties": {
+              "pointer": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

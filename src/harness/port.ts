@@ -14,9 +14,14 @@ export interface Harness {
 /** Receives every raw native message a harness sees (conformance recording only). */
 export type NativeTap = (entry: unknown) => void;
 
-export type Outcome =
-  | { ok: true; result: ResultPart; usage: Usage; diagnostic?: unknown }
-  | { ok: false; error: { code: ErrorCode; message: string; path?: string }; usage: Usage; diagnostic?: unknown };
+/**
+ * `usage` is this run's. `totals` is the engine's own running total for the session after the run, when the engine keeps
+ * one (the next run's baseline, `ResolvedSpec.session.totals`).
+ */
+export type Outcome = (
+  | { ok: true; result: ResultPart }
+  | { ok: false; error: { code: ErrorCode; message: string; path?: string } }
+) & { usage: Usage; totals?: Usage; diagnostic?: unknown };
 
 /** A caller message queued for the engine. The harness settles it exactly once. */
 export interface Steer {
@@ -64,6 +69,33 @@ export function applyOps(io: RunIO, ops: readonly Op[]): void {
 }
 
 export const ZERO_USAGE: Usage = Object.freeze({ input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 });
+
+export function addUsage(a: Usage, b: Usage): Usage {
+  const cost = a.cost_usd === undefined && b.cost_usd === undefined ? undefined : (a.cost_usd ?? 0) + (b.cost_usd ?? 0);
+  return {
+    input_tokens: a.input_tokens + b.input_tokens,
+    output_tokens: a.output_tokens + b.output_tokens,
+    cached_input_tokens: a.cached_input_tokens + b.cached_input_tokens,
+    ...(cost === undefined ? {} : { cost_usd: cost }),
+  };
+}
+
+/**
+ * This run's share of an engine's running totals. A baseline above the totals in any field means the engine started
+ * its totals over, so the totals are all this run's.
+ */
+export function usageSince(totals: Usage, baseline: Usage | undefined): Usage {
+  if (!baseline) return totals;
+  const restarted = totals.input_tokens < baseline.input_tokens || totals.output_tokens < baseline.output_tokens
+    || totals.cached_input_tokens < baseline.cached_input_tokens || (totals.cost_usd ?? 0) < (baseline.cost_usd ?? 0);
+  if (restarted) return totals;
+  return {
+    input_tokens: totals.input_tokens - baseline.input_tokens,
+    output_tokens: totals.output_tokens - baseline.output_tokens,
+    cached_input_tokens: totals.cached_input_tokens - baseline.cached_input_tokens,
+    ...(totals.cost_usd === undefined ? {} : { cost_usd: totals.cost_usd - (baseline.cost_usd ?? 0) }),
+  };
+}
 
 export function failure(code: ErrorCode, message: string, usage: Usage = ZERO_USAGE, diagnostic?: unknown): Outcome {
   return { ok: false, error: { code, message }, usage, ...(diagnostic === undefined ? {} : { diagnostic }) };

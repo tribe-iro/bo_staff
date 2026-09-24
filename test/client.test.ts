@@ -173,6 +173,18 @@ test("cli substitutes one stdin placeholder in argument order", async () => {
   assert.deepEqual(received?.input, [{ kind: "text", text: "review DIFF carefully" }]);
 });
 
+test("cli treats every argument after -- as prompt text", async () => {
+  let received: ResolvedSpec | undefined;
+  const s = await boot(async (runSpec) => { received = runSpec as ResolvedSpec; return ok(); });
+  const input = Object.assign(new PassThrough(), { isTTY: false });
+  input.end();
+  const code = await main(["run", "--url", s.url, "--workspace", await tmpdir(), "--", "--json", "--url", "-x"], {
+    in: input, out: new PassThrough(), err: new PassThrough(),
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(received?.input, [{ kind: "text", text: "--json --url -x" }]);
+});
+
 test("cli: --env, --max-turns, --max-tokens and --no-project-instructions map onto the spec", async () => {
   let received: ResolvedSpec | undefined;
   const s = await boot(async (spec) => { received = spec as ResolvedSpec; return ok(); });
@@ -230,7 +242,7 @@ test("cli: -c continues this directory's latest session; bo sessions lists it; -
   let text = "";
   listing.out.on("data", (c: Buffer) => { text += c.toString(); });
   assert.equal(await main(["sessions", "--url", s.url, "--workspace", root], listing), 0);
-  assert.match(text, /^session\s+engine\s+model\s+runs\s+last used\s+id\nfirst task\s+claude-code\s+–\s+2\s/);
+  assert.match(text, /^session\s+engine\s+model\s+runs\s+tokens\s+last used\s+id\nfirst task\s+claude-code\s+–\s+2\s+–\s/);
   assert.match(text, /bo run -c continues the newest/);
   const err = quiet();
   let problem = "";
@@ -271,4 +283,78 @@ test("cli: config.toml supplies defaults (new sessions only for engine/model/eff
   bad.err.on("data", (c: Buffer) => { problem += c.toString(); });
   assert.equal(await main(["runs"], bad, env), 2);
   assert.match(problem, /^bo: .*config\.toml: unknown key run\.verbos\n  `bo config` shows every setting and its source\n$/);
+});
+
+test("cli: bo show prints each stored run under its prompt, as bo run renders it", async () => {
+  const s = await boot(async (spec, io) => {
+    const r = spec as ResolvedSpec;
+    io.session(r.session?.native ?? "native-show");
+    io.upsert("a", { type: "action", action: { kind: "shell", command: "npm test" }, status: "completed" });
+    io.upsert("m", { type: "message", role: "agent", content: [{ kind: "text", text: `answer to ${r.input[0]!.kind === "text" ? r.input[0]!.text : ""}` }], status: "completed" });
+    return ok(`answer to ${r.input[0]!.kind === "text" ? r.input[0]!.text : ""}`);
+  });
+  const root = await tmpdir();
+  const quiet = () => ({ in: Object.assign(new PassThrough(), { isTTY: false }), out: new PassThrough(), err: new PassThrough() });
+  assert.equal(await main(["run", "--url", s.url, "--workspace", root, "fix it"], quiet()), 0);
+  assert.equal(await main(["run", "--url", s.url, "--workspace", root, "-c", "and the docs"], quiet()), 0);
+  const shown = quiet();
+  let text = "";
+  shown.out.on("data", (c: Buffer) => { text += c.toString(); });
+  const [session] = await new Bo({ url: s.url }).sessions.list(await import("node:fs/promises").then((fs) => fs.realpath(root)));
+  assert.equal(await main(["show", "--url", s.url, "-v", session!.id], shown), 0);
+  assert.equal(text, [
+    "› fix it", "  ▸ $ npm test", "answer to fix it", "", "✓ done · 0s", "",
+    "› and the docs", "  ▸ $ npm test", "answer to and the docs", "", "✓ done · 0s", "",
+  ].join("\n"));
+});
+
+test("events(): a subscriber the server dropped for falling behind resumes at once, missing nothing", async () => {
+  const gate = Promise.withResolvers<void>();
+  const s = await boot(async (_s, io) => {
+    await gate.promise;
+    for (let i = 0; i < 4_000; i++) io.upsert(`n${i}`, { type: "notice", level: "info", text: `item ${i}` });
+    return ok();
+  });
+  const bo = new Bo({ url: s.url });
+  const handle = await bo.run({ input: "go", workspace: await tmpdir() });
+  const ids: number[] = [];
+  const started = Date.now();
+  const done = (async () => { for await (const e of handle.events({ after: 2 })) if ("id" in e) ids.push(e.id); })();
+  await new Promise((r) => setTimeout(r, 100));
+  gate.resolve();
+  await done;
+  assert.deepEqual(ids, Array.from({ length: 4_001 }, (_, i) => i + 3), "every event once, in order (4 000 notices, then the terminal run)");
+  assert.ok(Date.now() - started < 1_000, `resumed without backing off (${Date.now() - started} ms)`);
+});
+
+test("events(): text a resumed stream sends again is dropped, so deltas come out exactly once", async () => {
+  const run = { id: "run_x", session_id: null, status: "running", engine: { id: "claude-code", version: "1" }, model: null, created_at: "", usage: { input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 } };
+  const item = { id: "itm_m", created_at: "", type: "message", role: "agent", content: [{ kind: "text", text: "" }], status: "in_progress" };
+  const frame = (event: string, data: unknown, id?: number) => `${id ? `id: ${id}\n` : ""}event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  const resumedFrom: (string | undefined)[] = [];
+  const server = createHttpServer((req, res) => {
+    if (!req.url!.endsWith("/events")) return void res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(run));
+    resumedFrom.push(req.headers["last-event-id"] as string | undefined);
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    if (resumedFrom.length === 1) {   // then the connection drops
+      res.end(frame("run", run, 1) + frame("item", item, 2) + frame("delta", { item_id: "itm_m", offset: 0, text: "H🙂" }));
+    } else {
+      res.end(frame("delta", { item_id: "itm_m", offset: 0, text: "H🙂llo, " })
+        + frame("delta", { item_id: "itm_m", offset: 7, text: "world" }) + frame("run", { ...run, status: "completed" }, 3));
+    }
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const handle = await new Bo({ url: `http://127.0.0.1:${(server.address() as { port: number }).port}` }).runs.get("run_x");
+    const deltas: unknown[] = [];
+    for await (const e of handle.events()) if (e.event === "delta") deltas.push(e.data);
+    assert.deepEqual(resumedFrom, [undefined, "2"]);
+    assert.deepEqual(deltas, [
+      { item_id: "itm_m", offset: 0, text: "H🙂" },
+      { item_id: "itm_m", offset: 2, text: "llo, " },
+      { item_id: "itm_m", offset: 7, text: "world" },
+    ]);
+  } finally {
+    server.close();
+  }
 });

@@ -3,6 +3,7 @@ import { realpath } from "node:fs/promises";
 import path from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Created } from "../core/runs.ts";
+import { sessionNotFound } from "../core/sessions.ts";
 import { isProblem, problem, writeProblem, type Problem } from "../problems.ts";
 import { parseMessage, parseResponse, resolveSpec } from "../spec.ts";
 import type { Body, Context } from "./context.ts";
@@ -15,6 +16,19 @@ const ROUTES: readonly { method: string; pattern: RegExp; handler: Handler }[] =
   { method: "POST", pattern: /^\/v1\/runs$/, handler: createRun },
   { method: "GET", pattern: /^\/v1\/runs$/, handler: async (ctx, _req, res) => json(res, 200, ctx.runs.list()) },
   { method: "GET", pattern: /^\/v1\/sessions$/, handler: listSessions },
+  { method: "GET", pattern: /^\/v1\/sessions\/([^/]+)$/, handler: async (ctx, _req, res, [id]) => {
+    const session = ctx.sessions.get(id!);
+    return session ? json(res, 200, session) : writeProblem(res, sessionNotFound(id!));
+  } },
+  { method: "GET", pattern: /^\/v1\/sessions\/([^/]+)\/runs$/, handler: async (ctx, _req, res, [id]) => {
+    if (!ctx.sessions.get(id!)) return writeProblem(res, sessionNotFound(id!));
+    json(res, 200, await ctx.sessions.runs(id!));
+  } },
+  { method: "DELETE", pattern: /^\/v1\/sessions\/([^/]+)$/, handler: async (ctx, _req, res, [id]) => {
+    const refused = ctx.runs.deleteSession(id!);
+    if (refused) return writeProblem(res, refused);
+    res.writeHead(204).end();
+  } },
   { method: "GET", pattern: /^\/v1\/runs\/([^/]+)$/, handler: async (ctx, _req, res, [id]) => {
     const run = ctx.runs.get(id!);
     return run ? json(res, 200, run) : writeProblem(res, problem("run_not_found", `no run ${id}`));
@@ -73,6 +87,7 @@ async function createRun(ctx: Context, req: IncomingMessage, res: ServerResponse
   if ("problem" in resolved) return writeProblem(res, resolved.problem);
   return created(res, await ctx.runs.create(resolved.spec, { idempotency: idem }));
 }
+
 
 /** `GET /v1/sessions[?workspace=<absolute path>]`: newest first. */
 async function listSessions(ctx: Context, req: IncomingMessage, res: ServerResponse): Promise<void> {

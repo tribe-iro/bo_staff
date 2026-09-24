@@ -5,8 +5,8 @@
     "text": "Created [b.txt](/tmp/bo-scratch-xmUEKv/repo/b.txt) containing `ok`."
   },
   "usage": {
-    "input_tokens": 41351,
-    "output_tokens": 172,
-    "cached_input_tokens": 22784
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

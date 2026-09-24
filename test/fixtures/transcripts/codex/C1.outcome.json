@@ -5,8 +5,8 @@
     "text": "Hi!"
   },
   "usage": {
-    "input_tokens": 13876,
-    "output_tokens": 6,
-    "cached_input_tokens": 11776
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

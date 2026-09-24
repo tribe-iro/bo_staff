@@ -7,8 +7,8 @@
     }
   },
   "usage": {
-    "input_tokens": 11674,
-    "output_tokens": 16,
-    "cached_input_tokens": 9344
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

@@ -5,8 +5,8 @@
     "text": "Red"
   },
   "usage": {
-    "input_tokens": 11698,
-    "output_tokens": 15,
-    "cached_input_tokens": 9344
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

@@ -4,7 +4,7 @@ const STATUS = {
   invalid_spec: 422, invalid_request: 422, unsupported_feature: 422, engine_unavailable: 422,
   idempotency_mismatch: 422, wrong_response_kind: 422,
   session_busy: 409, item_not_awaiting: 409, not_accepting_messages: 409,
-  run_not_found: 404, item_not_found: 404, not_found: 404,
+  run_not_found: 404, item_not_found: 404, session_not_found: 404, not_found: 404,
   too_many_runs: 429, too_many_messages: 429, too_many_subscribers: 429, too_many_idempotency_keys: 429,
   unauthorized: 401, forbidden_host: 403, method_not_allowed: 405, unsupported_media_type: 415, payload_too_large: 413, invalid_json: 400,
   internal: 500, unavailable: 503,

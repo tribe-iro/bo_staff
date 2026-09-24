@@ -349,23 +349,23 @@ test("cancel settles awaiting items: an action is denied with the reason, a ques
   ]);
 });
 
-test("runs record their session in the index: title from the first prompt, model, runs counted, A2A context", async () => {
+test("runs record their session in the index: title from the first prompt, model, runs counted, the key it started under", async () => {
   const runs = manager(scripted("claude-code", async (s, io) => {
     io.session(s.session?.native ?? "n1");
     io.model("m1");
     return ok();
   }));
-  const first = await create(runs, { input: [{ kind: "text", text: "fix the flaky test\nthen more" }], root: "/w" }, undefined);
+  const first = await create(runs, { input: [{ kind: "text", text: "fix the flaky test\nthen more" }], root: "/w", sessionKey: "acp:9" }, undefined);
   await collect(eventsOf(runs, first.id));
-  const second = await runs.create(spec({ runId: "run_second", root: "/w", session: { native: "n1", fork: false } }), { context: "ctx9" });
+  const second = await runs.create(spec({ runId: "run_second", root: "/w", session: { native: "n1", fork: false } }));
   assert.ok("run" in second);
   await collect(eventsOf(runs, second.run.id));
   const [session] = runs.sessions.list("/w");
   assert.deepEqual({ ...session, created_at: "", updated_at: "" }, {
-    id: encodeSession("claude-code", "n1"), engine: "claude-code", workspace: "/w", title: "fix the flaky test", model: "m1", runs: 2,
-    created_at: "", updated_at: "",
+    id: encodeSession("claude-code", "n1"), engine: "claude-code", workspace: "/w", title: "fix the flaky test", key: "acp:9", model: "m1", runs: 2,
+    usage: { input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 }, created_at: "", updated_at: "",
   });
-  assert.equal(runs.sessions.latest({ context: "ctx9" }), undefined, "a context is recorded only by the run that starts the session");
+  assert.equal(runs.sessions.latest({ workspace: "/w", key: "acp:9" })?.id, encodeSession("claude-code", "n1"));
 });
 
 test("limits are bo's: the run fails with limit_exceeded at the first model call past max_turns or max_tokens", async () => {
@@ -377,14 +377,165 @@ test("limits are bo's: the run fails with limit_exceeded at the first model call
   const byTurns = manager(calls(3, 10));
   const t = await create(byTurns, { limits: { maxTurns: 2 } });
   const turned = runs_(await collect(eventsOf(byTurns, t.id))).at(-1)!;
-  assert.deepEqual([turned.status, turned.error], ["failed", { code: "limit_exceeded", message: "the run went past max_turns (2)" }]);
+  assert.deepEqual([turned.status, turned.error], ["failed", { code: "limit_exceeded", message: "the run went past max_turns (2)", path: "/limits/max_turns" }]);
 
   const subagents = manager(calls(5, 10, false));
   const s = await create(subagents, { limits: { maxTurns: 2, maxTokens: 45 } });
   const spent = runs_(await collect(eventsOf(subagents, s.id))).at(-1)!;
-  assert.deepEqual(spent.error, { code: "limit_exceeded", message: "the run went past max_tokens (45)" }, "subagent calls count toward tokens, not turns");
+  assert.deepEqual(spent.error, { code: "limit_exceeded", message: "the run went past max_tokens (45)", path: "/limits/max_tokens" }, "subagent calls count toward tokens, not turns");
 
   const within = manager(scripted("claude-code", async (_s, io) => { io.modelCall(10, true); io.modelCall(10, true); return ok(); }));
   const w = await create(within, { limits: { maxTurns: 2, maxTokens: 20 } });
   assert.equal(runs_(await collect(eventsOf(within, w.id))).at(-1)!.status, "completed", "exactly at a limit is within it");
+});
+
+test("a run's usage is its own; its session sums runs and keeps the engine's totals for the next baseline", async () => {
+  const totals = { input_tokens: 500, output_tokens: 50, cached_input_tokens: 300 };
+  const runs = manager(scripted("claude-code", async (s, io) => {
+    io.session("n1");
+    return { ...ok(), usage: { input_tokens: 100, output_tokens: 10, cached_input_tokens: 60 }, totals };
+  }));
+  for (let i = 0; i < 2; i++) {
+    const run = await create(runs, { root: "/w" });
+    const terminal = runs_(await collect(eventsOf(runs, run.id))).at(-1)!;
+    assert.deepEqual(terminal.usage, { input_tokens: 100, output_tokens: 10, cached_input_tokens: 60 });
+  }
+  const id = encodeSession("claude-code", "n1");
+  assert.deepEqual(runs.sessions.list("/w")[0]!.usage, { input_tokens: 200, output_tokens: 20, cached_input_tokens: 120 });
+  assert.deepEqual(runs.sessions.totals(id), totals);
+});
+
+test("deltas carry their offset; every subscriber gets the text so far at offset 0, so a resume misses nothing", async () => {
+  const gate = Promise.withResolvers<void>();
+  const more = Promise.withResolvers<void>();
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    io.upsert("m", { type: "message", role: "agent", content: [{ kind: "text", text: "" }], status: "in_progress" });
+    io.delta("m", "H🙂l");
+    await gate.promise;
+    io.delta("m", "lo, ");   // while the first subscriber is disconnected
+    await more.promise;
+    io.delta("m", "world");
+    io.upsert("m", { type: "message", role: "agent", content: [{ kind: "text", text: "H🙂llo, world" }], status: "completed" });
+    return ok();
+  }));
+  const run = await create(runs);
+  await sleep(10);
+  const deltas = (events: StreamEvent[]) => events.filter((e) => e.event === "delta").map((e) => e.data);
+  const first = subscribe(runs, run.id, 0);
+  first.close();
+  const seen = await collect(first.events);
+  const lastId = Math.max(...seen.filter((e) => "id" in e).map((e) => (e as { id: number }).id));
+  assert.deepEqual(deltas(seen).map((d) => d.offset), [0], "the text so far, from offset 0");
+  gate.resolve();
+  await sleep(10);
+  const resumed = subscribe(runs, run.id, lastId);   // Last-Event-ID: the item was seen, a delta was not
+  more.resolve();
+  const item = (await collect(resumed.events)).filter((e) => e.event === "delta");
+  assert.deepEqual(item.map((e) => e.data), [
+    { item_id: deltas(seen)[0]!.item_id, offset: 0, text: "H🙂llo, " },
+    { item_id: deltas(seen)[0]!.item_id, offset: 7, text: "world" },
+  ], "offsets count code points; the missed delta is in the catch-up");
+});
+
+test("streamed text counts against the run's byte budget", async () => {
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    io.upsert("m", { type: "message", role: "agent", content: [{ kind: "text", text: "" }], status: "in_progress" });
+    for (let i = 0; i < 40; i++) io.delta("m", "x".repeat(1024 * 1024));
+    await new Promise((resolve) => io.signal.addEventListener("abort", resolve));
+    return ok();
+  }));
+  const run = await create(runs);
+  const terminal = runs_(await collect(eventsOf(runs, run.id))).at(-1)!;
+  assert.equal(terminal.error?.code, "resource_exhausted");
+});
+
+test("an oversized result still publishes one small terminal event", async () => {
+  const runs = manager(scripted("claude-code", async () => ok("x".repeat(33 * 1024 * 1024))));
+  const run = await create(runs);
+  const events = await collect(eventsOf(runs, run.id));
+  const terminal = runs_(events).filter((r) => TERMINAL.has(r.status));
+  assert.equal(terminal.length, 1);
+  assert.equal(terminal[0]!.error?.code, "resource_exhausted");
+  assert.equal(runs.get(run.id)!.status, "failed");
+});
+
+test("unserializable provider data still publishes a terminal event", async () => {
+  const value: Record<string, unknown> = {};
+  value.self = value;
+  const runs = manager(scripted("claude-code", async () => ({
+    ok: true, result: { kind: "data", data: value as never }, usage: { input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 },
+  })));
+  const run = await create(runs);
+  const terminal = runs_(await collect(eventsOf(runs, run.id))).filter((r) => TERMINAL.has(r.status));
+  assert.equal(terminal.length, 1);
+  assert.equal(terminal[0]!.error?.code, "engine_error");
+});
+
+test("replay delivers cumulative text before a terminal event after more than one subscriber page", async () => {
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    io.upsert("m", { type: "message", role: "agent", content: [{ kind: "text", text: "" }], status: "in_progress" });
+    for (let i = 0; i < 1_500; i++) io.upsert(`n${i}`, { type: "notice", level: "info", text: String(i) });
+    io.delta("m", "last words");
+    return ok();
+  }));
+  const run = await create(runs);
+  while (!TERMINAL.has(runs.get(run.id)!.status)) await sleep(1);
+  const events = await collect(eventsOf(runs, run.id));
+  const deltaAt = events.findIndex((e) => e.event === "delta" && e.data.text === "last words");
+  const terminalAt = events.findIndex((e) => e.event === "run" && TERMINAL.has(e.data.status));
+  assert.ok(deltaAt > 1_024 && terminalAt > deltaAt);
+  assert.equal(events.filter((e) => e.event === "delta").length, 1);
+});
+
+test("a new session key is held from admission: a concurrent run under the same key in the same workspace is busy", async () => {
+  const gate = Promise.withResolvers<void>();
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    await gate.promise;
+    io.session(`n-${Math.random()}`);
+    return ok();
+  }));
+  const first = await create(runs, { root: "/w", sessionKey: "k" });
+  const again = await runs.create(spec({ runId: "run_again", root: "/w", sessionKey: "k" }));
+  assert.ok("problem" in again && problemName(again.problem) === "session_busy");
+  await create(runs, { root: "/other", sessionKey: "k" });   // a key is per workspace
+  gate.resolve();
+  await collect(eventsOf(runs, first.id));
+  assert.equal(runs.sessions.list("/w").filter((x) => x.key === "k").length, 1, "one session under the key");
+});
+
+test("a stale resolution cannot create another session under an indexed key", async () => {
+  const gate = Promise.withResolvers<void>();
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    io.session("n1");
+    await gate.promise;
+    return ok();
+  }));
+  const stale = spec({ runId: "run_stale", root: "/w", sessionKey: "k" });
+  const first = await create(runs, { root: "/w", sessionKey: "k" });
+  while (!runs.sessions.latest({ workspace: "/w", key: "k" })) await sleep(1);
+  const active = await runs.create(stale);
+  assert.ok("problem" in active && problemName(active.problem) === "session_busy");
+  gate.resolve();
+  await collect(eventsOf(runs, first.id));
+  const finished = await runs.create(stale);
+  assert.ok("problem" in finished && problemName(finished.problem) === "session_busy");
+  assert.equal(runs.sessions.list("/w").filter((s) => s.key === "k").length, 1);
+});
+
+test("a session with an active run cannot be deleted; once it ends, a deletion sticks", async () => {
+  const gate = Promise.withResolvers<void>();
+  const runs = manager(scripted("claude-code", async (_s, io) => {
+    io.session("n1");
+    await gate.promise;
+    return ok();
+  }));
+  const run = await create(runs, { root: "/w" });
+  await sleep(10);
+  const id = encodeSession("claude-code", "n1");
+  assert.equal(outcomeOf(runs.deleteSession(id)), "session_busy");
+  gate.resolve();
+  await collect(eventsOf(runs, run.id));
+  assert.equal(outcomeOf(runs.deleteSession(id)), "ok");
+  assert.equal(runs.sessions.get(id), undefined);
+  assert.equal(outcomeOf(runs.deleteSession(id)), "session_not_found");
 });

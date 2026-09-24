@@ -46,7 +46,8 @@ test("translator: session, streaming message, tool lifecycle, plan, reasoning, r
   assert.deepEqual(ops[7], { op: "upsert", key: "plan", body: { type: "plan", steps: [{ text: "a", status: "completed" }, { text: "b", status: "in_progress" }] } });
   assert.deepEqual(ops[8], { op: "upsert", key: "tu1", body: { type: "action", action: { kind: "shell", command: "ls" }, status: "completed", outcome: { excerpt: "file.txt" } }, parentKey: undefined });
   assert.deepEqual(ops[9], { op: "upsert", key: "msg3:0", body: { type: "message", role: "agent", content: [{ kind: "text", text: "from subagent" }], status: "completed" }, parentKey: "tu9" });
-  assert.deepEqual(t.outcome(), { ok: true, result: { kind: "text", text: "final" }, usage: { input_tokens: 13, output_tokens: 5, cached_input_tokens: 2, cost_usd: 0.5 } },
+  const totals = { input_tokens: 13, output_tokens: 5, cached_input_tokens: 2, cost_usd: 0.5 };
+  assert.deepEqual(t.outcome(), { ok: true, result: { kind: "text", text: "final" }, usage: totals, totals },
     "input counts cache reads and writes; cached counts reads only");
 });
 
@@ -101,7 +102,7 @@ test("translator folds TaskCreate/TaskUpdate into one plan item", () => {
 test("translator outcomes: structured output, invalid output, errors", () => {
   const s = createTranslator({ schema: { type: "object" } });
   s.onMessage(result({ structured_output: { answer: "x" } }));
-  assert.deepEqual(s.outcome().ok && s.outcome(), { ok: true, result: { kind: "data", data: { answer: "x" } }, usage: s.outcome().usage });
+  assert.deepEqual(s.outcome().ok && s.outcome(), { ok: true, result: { kind: "data", data: { answer: "x" } }, usage: s.outcome().usage, totals: s.outcome().totals });
   const bad = createTranslator({ schema: { type: "object" } });
   bad.onMessage(result({ structured_output: "nope" }));
   assert.equal(!bad.outcome().ok && (bad.outcome() as { error: { code: string } }).error.code, "invalid_output");
@@ -333,4 +334,37 @@ test("translator: every model call is reported with its tokens (cache included);
   assert.deepEqual(ev({ type: "message_delta", usage: { output_tokens: 3 } }, "tu1"), [{ op: "call", tokens: 10, main: false }]);
   assert.deepEqual(ev({ type: "message_delta", usage: { output_tokens: 40 } }), [{ op: "call", tokens: 165, main: true }]);
   assert.deepEqual(ev({ type: "message_delta", usage: { output_tokens: 1 } }), [], "one report per call");
+});
+
+test("per-run usage: a resumed session's running totals minus the baseline; subagent tokens reach the limits", () => {
+  const baseline = { input_tokens: 10, output_tokens: 2, cached_input_tokens: 1, cost_usd: 0.1 };
+  const t = createTranslator({ session: { native: "s-1", fork: false, totals: baseline } });
+  t.onMessage(m({ type: "assistant", parent_tool_use_id: null, message: { id: "a", content: [{ type: "tool_use", id: "ag", name: "Agent", input: { description: "d" } }] } }));
+  assert.deepEqual(t.onMessage(m({ type: "user", parent_tool_use_id: null, tool_use_result: { totalTokens: 321 }, message: { content: [{ type: "tool_result", tool_use_id: "ag", content: "ok" }] } })).find((o) => o.op === "call"),
+    { op: "call", tokens: 321, main: false }, "a foreground subagent's tokens arrive with its result");
+  assert.deepEqual(t.onMessage(m({ type: "system", subtype: "task_notification", task_id: "bg", status: "completed", output_file: "", summary: "", usage: { total_tokens: 50, tool_uses: 1, duration_ms: 1 } })),
+    [{ op: "call", tokens: 50, main: false }], "and a background one's with its notification");
+  t.onMessage(result());
+  const o = t.outcome();
+  assert.deepEqual(o.usage, { input_tokens: 3, output_tokens: 3, cached_input_tokens: 1, cost_usd: 0.5 - 0.1 }, "13/5/2 totals minus the 10/2/1 baseline");
+  assert.deepEqual(o.totals, { input_tokens: 13, output_tokens: 5, cached_input_tokens: 2, cost_usd: 0.5 });
+});
+
+test("edits carry diffs: the requested change before approval, the real patch after", () => {
+  assert.deepEqual(toAction("Edit", { file_path: "/w/a.txt", old_string: "two", new_string: "TWO" }),
+    { kind: "edit", changes: [{ path: "/w/a.txt", change: "modify", diff: "@@ @@\n-two\n+TWO\n" }] });
+  assert.deepEqual(toAction("Write", { file_path: "/w/b.txt", content: "hi\n" }),
+    { kind: "edit", changes: [{ path: "/w/b.txt", change: "add", diff: "@@ -0,0 +1,1 @@\n+hi\n" }] });
+  const t = createTranslator({});
+  const use = (id: string, name: string, input: Record<string, unknown>) =>
+    t.onMessage(m({ type: "assistant", parent_tool_use_id: null, message: { id: `msg-${id}`, content: [{ type: "tool_use", id, name, input }] } }));
+  const result = (id: string, toolResult: unknown) => t.onMessage(m({ type: "user", parent_tool_use_id: null, tool_use_result: toolResult, message: { content: [{ type: "tool_result", tool_use_id: id, content: "ok" }] } }));
+  use("e1", "Edit", { file_path: "/w/a.txt", old_string: "two", new_string: "TWO" });
+  const edited = result("e1", { filePath: "/w/a.txt", structuredPatch: [{ oldStart: 1, oldLines: 3, newStart: 1, newLines: 3, lines: [" one", "-two", "+TWO", " three"] }] });
+  assert.deepEqual((edited[0] as { body: { action: unknown } }).body.action,
+    { kind: "edit", changes: [{ path: "/w/a.txt", change: "modify", diff: "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n" }] });
+  use("w1", "Write", { file_path: "/w/a.txt", content: "new\n" });
+  const overwritten = result("w1", { type: "update", filePath: "/w/a.txt", content: "new\n", structuredPatch: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, lines: ["-old", "+new"] }] });
+  assert.deepEqual((overwritten[0] as { body: { action: unknown } }).body.action,
+    { kind: "edit", changes: [{ path: "/w/a.txt", change: "modify", diff: "@@ -1,1 +1,1 @@\n-old\n+new\n" }] }, "writing over a file is a modification");
 });

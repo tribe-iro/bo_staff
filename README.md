@@ -48,7 +48,7 @@ bo keeps its own directories: `${XDG_CONFIG_HOME:-~/.config}/bo/config.toml` (se
 ```toml
 url = "http://127.0.0.1:3000"   # where the CLI finds the server
 
-[run]            # defaults for `bo run`
+[run]            # defaults for new sessions of `bo run` and `bo acp`
 engine = "codex" # engine, model and effort shape new sessions; a continued session keeps its own
 model = "…"
 effort = "high"
@@ -71,19 +71,21 @@ Precedence is flag > environment > config.toml > built-in default. The token is 
 bo serve [--host HOST] [--port PORT] [--token TOKEN] [--max-runs N] [--default-engine ENGINE] [--allow-subscription-auth] [-v]
 bo run [flags] [prompt...]
 bo run -c [flags] [prompt...]
-bo sessions [--all | --workspace DIR]
+bo sessions [--all | --workspace DIR | --delete ID]
+bo show [SESSION_ID]
 bo runs
 bo follow RUN_ID
 bo cancel RUN_ID
 bo engines
 bo config
+bo acp [--url URL] [--token TOKEN]
 ```
 
 Run flags map directly to `RunSpec`: `--engine`, `--model`, `--effort`, `--instructions`, repeatable `--skill`, `--mcp`, `--subagents`, `--workspace`, repeatable `--extra-root`, `--access`, `--internet`/`--no-internet`, `--interactive`/`--no-interactive`, `--schema`, `-c`/`--continue`, `--session`, `--fork`, repeatable `--image`, `--timeout`, repeatable `--env NAME=value`, `--max-turns`, `--max-tokens`, and `--no-project-instructions`.
 
-The workspace defaults to the current directory. A standalone `-` inserts stdin into the prompt; with no prompt words stdin is the prompt. Interactive mode defaults from the terminal and is disabled when stdin supplies prompt content.
+The workspace defaults to the current directory. A standalone `-` inserts stdin into the prompt; with no prompt words stdin is the prompt. `--` ends flag parsing, so later words beginning with `-` are prompt text. Interactive mode defaults from the terminal and is disabled when stdin supplies prompt content.
 
-A run starts a new session unless you continue one: `-c` continues this directory's latest session (with `--engine`, its latest session on that engine), `--session <id>` any other, and `--fork` branches either. `bo sessions` lists this directory's sessions, newest first.
+A run starts a new session unless you continue one: `-c` continues this directory's latest session (with `--engine`, its latest session on that engine), `--session <id|key>` any other (a key names a session in this directory, and starts one under that key when none exists yet), and `--fork` branches either. `bo sessions` lists this directory's sessions, newest first, with their token totals; `bo show` prints a session's runs (this directory's latest by default) as `bo run` rendered them, each under its prompt.
 
 Output is quiet by default:
 
@@ -141,50 +143,54 @@ GET    /v1/runs
 GET    /v1/runs/{id}
 GET    /v1/runs/{id}/events
 GET    /v1/sessions[?workspace=ABSOLUTE_PATH]
+GET    /v1/sessions/{id}
+GET    /v1/sessions/{id}/runs
+DELETE /v1/sessions/{id}
 POST   /v1/runs/{id}/messages
 POST   /v1/runs/{id}/items/{item}/response
 POST   /v1/runs/{id}/cancel
 ```
 
-`POST /v1/runs` returns `201`, a `Location` header, and the initial `Run`. `Idempotency-Key` is supported. Events use SSE and resume through `Last-Event-ID`; disconnecting does not cancel the run.
+`POST /v1/runs` returns `201`, a `Location` header, and the initial `Run`. `Idempotency-Key` is supported. Events use SSE and resume through `Last-Event-ID`; disconnecting does not cancel the run. `run` and `item` events carry ids; `delta` events (`{item_id, offset, text}`, text streamed into an item since its latest version) are not logged and carry none. Instead, every new connection gets each item's text so far as one delta at offset 0, and `offset` (in Unicode code points) says where a delta starts, so a resuming client appends only the part past what it has. The TypeScript client does this itself: its deltas come out exactly once.
 
-### RunSpec
+### Contract
 
-```ts
-interface RunSpec {
-  input: Part[];
-  workspace: { root: string; extra_roots?: string[] };
-  engine?: "claude-code" | "codex";
-  model?: string;
-  effort?: string;
-  instructions?: string;
-  project_instructions?: boolean;
-  skills?: string[];
-  mcp?: Record<string, McpServer>;
-  subagents?: Record<string, { description: string; instructions: string; model?: string; effort?: string }>;
-  permissions?: { access?: "read" | "write" | "full"; internet?: boolean };
-  interactive?: boolean;
-  env?: Record<string, string>;
-  limits?: { max_turns?: number; max_tokens?: number };
-  output?: { schema: Record<string, unknown> };
-  session?: { id: string; fork?: boolean } | { latest: true; fork?: boolean };
-  timeout_s?: number;
+Every request and response shape is defined once, in `src/contract/schema.ts`, and published as
+[`contract/bo.v1.schema.json`](contract/bo.v1.schema.json) (JSON Schema) and [`contract/openapi.json`](contract/openapi.json)
+(OpenAPI 3.1); `npm run contract` regenerates them and a test keeps them current. Within `/v1`, changes are additive
+only (new optional fields, item types, action kinds); clients ignore what they do not know. Anything else is `/v2`.
+The server's own output is tested against the schemas.
+
+A run spec:
+
+```json
+{
+  "input": [{ "kind": "text", "text": "fix the failing tests" }],
+  "workspace": { "root": "/home/me/project" },
+  "engine": "codex",
+  "effort": "high",
+  "permissions": { "access": "write" },
+  "limits": { "max_turns": 40 },
+  "session": { "latest": true }
 }
 ```
 
-Defaults: engine is the server default; model and effort are engine defaults (`model` accepts a model id or one of its aliases; `effort` must be one of the selected model's `efforts`, or the default model's when `model` is omitted); access is `write`; internet is enabled only when access is `full`; interactive is false; project instructions are included; timeout is 1800 seconds. A session pins its engine. An explicit conflicting engine is rejected. `session.latest` continues the newest session of this workspace root (restricted to `engine` when set); if there is none, the spec is invalid at `/session/latest`.
 
-A session is a conversation: one engine, one workspace, many runs. `GET /v1/sessions` lists `{id, engine, workspace, title, model, runs, created_at, updated_at}`, most recently used first, from bo's session index (up to 50 per workspace), which survives restarts. The engines keep the conversations themselves. Unknown fields are rejected.
+Defaults: engine is the server default; model and effort are engine defaults (`model` accepts a model id or one of its aliases; `effort` must be one of the selected model's `efforts`, or the default model's when `model` is omitted); access is `write`; internet is enabled only when access is `full`; interactive is false; project instructions are included; timeout is 1800 seconds. A session pins its engine and its workspace: an explicit conflicting engine is rejected, and so is continuing or forking a session from another workspace root (at `/session/id`). One run at a time holds a session (`session_busy` otherwise); a run that starts a session under a new key holds that key from the start. If another request creates the keyed session while this request is being prepared, the latter gets `session_busy` and can retry to continue it. `session.latest` continues the newest session of this workspace root (restricted to `engine` when set); if there is none, the spec is invalid at `/session/latest`. `session.key` (`^[A-Za-z0-9._:-]{1,128}$`, unique per workspace) is a caller-chosen name: it continues the session with that key, or starts one under it; `Session.key` reports it, and `GET /v1/sessions?workspace=…` finds it. `session` takes exactly one of `id`, `latest` or `key`, each with an optional `fork`.
+
+A session is a conversation: one engine, one workspace, many runs. `GET /v1/sessions` lists `{id, engine, workspace, title, model, runs, usage, created_at, updated_at}`, most recently used first, from bo's session index (up to 50 per workspace), which survives restarts. The engines keep the conversations themselves. `GET /v1/sessions/{id}/runs` returns the session's finished runs, oldest first, as `{run, items}` (the terminal `Run` and each item in its final state), from a history bo keeps per session (at most 8 MiB, oldest runs dropped first). `DELETE /v1/sessions/{id}` forgets a session and its history in bo (`409 session_busy` while a run holds it); the engine's own history is untouched. A session change the server could not write to disk is logged when it happens, and `bo serve` exits non-zero if any is still unsaved when it stops. An unreadable or malformed session index stops startup so the file remains available for repair. Unknown fields are rejected.
 
 `instructions` are added to the engine's own system prompt. With `project_instructions` (default true), the workspace root's `AGENTS.md` and then `CLAUDE.md` (each at most 32 KiB; a file linked under both names is read once) come first; nothing else from the workspace configures the engine. A subagent's `effort` is checked against its model (its `model`, else the run's, else the default). `env` sets variables for the engine and every tool it runs (`BO_*` names are reserved; bo's own run variables win). `limits` are enforced by bo the same way for every engine: `max_turns` counts the agent's own model calls, `max_tokens` the input (cached included) and output tokens of every model call in the run, subagents included; the run fails with `limit_exceeded` at the first call past one. An access level is what the engine may do without asking: in an interactive run, the caller may approve an action beyond it.
 
 Input parts are `{kind:"text",text}`, `{kind:"image",path,media_type}`, or `{kind:"data",data}`. Images are limited to 5 MiB and require a model whose `images` is true. A run result is a text or data part. Output schemas are strict draft-07 object schemas (standard `format`s are validated), limited to 64 KiB, without remote references.
 
-MCP servers are stdio `{command,args?,env?,tools?}` or HTTP `{url,headers?,tools?}`. `tools` is an enforced allowlist. Skills are absolute server-local directories containing `SKILL.md`. Workspace, skill, image, and executable paths are resolved on the service machine; this service is single-tenant and acts with its operator's CLI credentials.
+Run events and streamed text share a 32 MiB budget. A result that cannot fit is reported by a terminal run with `resource_exhausted`.
+
+MCP servers are stdio `{command,args?,env?,tools?}` or HTTP `{url,headers?,tools?}`. `tools` is an enforced allowlist. Supplying an MCP server authorizes its allowed tools even in `read` access; those tools can have effects beyond the workspace sandbox. The caller chooses this capability, including through an ACP editor's MCP server configuration. Skills are absolute server-local directories containing `SKILL.md`. Workspace, skill, image, and executable paths are resolved on the service machine; this service is single-tenant and acts with its operator's CLI credentials.
 
 `GET /v1/engines` reports availability, version, authentication kind, and models as `{id, aliases, default, efforts, images}`. Every capability in this document works on every engine; the only per-model difference is `images` (whether a model accepts image input, in the prompt and in later messages). Engines are probed at startup; an unavailable engine is probed again (at most every 30 seconds) when it is next asked for, and an available one keeps its probe until restart. A terminal `Run` reports the actual `{id,version}` engine and model used.
 
-`Run.usage` holds totals for the session so far, including runs it resumed or forked from (both engines keep session totals). `input_tokens` counts every input token, cached ones included; `cached_input_tokens` counts input read from cache; `output_tokens` counts every output token, reasoning included; `cost_usd` is the engine's estimate when it has one.
+`Run.usage` is what that run used: the tokens of its model calls, subagents included (`input_tokens` counts every input token, cached ones included; `cached_input_tokens` the input read from cache; `output_tokens` every output token, reasoning included; `cost_usd` when the engine reports cost). `Session.usage` is the sum of its runs.
 
 `POST /v1/runs/{id}/messages` returns `202` once the message is queued. It appears in the event stream as a user message item only when the engine accepts it; a message the engine never receives becomes a warning notice with the reason.
 
@@ -196,7 +202,30 @@ Engine events without their own item type become `notice` items: API retries, co
 
 ## A2A
 
-The agent card is at `/.well-known/agent-card.json`; JSON-RPC is at `/a2a`. Extension `urn:bo:a2a:run:v1` carries the flat `RunSpec` minus input in message metadata and bo items in status-update metadata. Without extension metadata, `BO_A2A_WORKSPACE` supplies the workspace. A context continues its latest session (through the same durable session index, so across restarts too). Pending input is answered with a data part `{item_id, response}`.
+The agent card is at `/.well-known/agent-card.json`; JSON-RPC is at `/a2a`. Extension `urn:bo:a2a:run:v1` carries the flat `RunSpec` minus input in message metadata and bo items in status-update metadata. Without extension metadata, `BO_A2A_WORKSPACE` supplies the workspace. A context is the session keyed `a2a:<hash of contextId>`, so it continues across restarts. Pending input is answered with a data part `{item_id, response}`.
+
+## ACP
+
+`bo acp` speaks the [Agent Client Protocol](https://agentclientprotocol.com) v1 on stdin/stdout, so editors that host ACP agents (Zed, JetBrains, Neovim's CodeCompanion) drive both engines through bo. It is a client of a running `bo serve` (`--url`, `--token`, or the usual config). In Zed:
+
+```json
+{ "agent_servers": { "bo": { "command": "bo", "args": ["acp"] } } }
+```
+
+One prompt is one bo run, interactive, in the editor's `cwd` (plus its additional directories) with the editor's MCP servers. The session's options are `model` (every available engine's models, grouped by engine, as `<engine>/<model>`; a session keeps its engine after its first prompt), `effort` (the selected model's efforts), and `mode`: `read`, `write`, `write-internet` or `full` (not offered when bo runs as root), also exposed as ACP modes. Their defaults come from config.toml.
+
+| bo | ACP |
+|---|---|
+| agent message deltas, reasoning | `agent_message_chunk`, `agent_thought_chunk` |
+| plan | `plan` |
+| action | `tool_call` then `tool_call_update` (kind, status, locations, the action as `rawInput`, the outcome as `rawOutput`); edits carry `diff` content, commands their output |
+| subagent items | content of the delegating tool call |
+| action awaiting approval | `session/request_permission`: Allow, Allow for this prompt, Deny |
+| question | `elicitation/create` form (empty answers when the editor has no forms) |
+| delivered steering message | `user_message_chunk` |
+| `completed` · `cancelled` · `max_turns` / `max_tokens` exceeded | `end_turn` · `cancelled` · `max_turn_requests` / `max_tokens`; other failures are JSON-RPC errors with bo's message |
+
+`Run.usage` is returned as the prompt's `usage`. Prompt images (at most 5 MiB each) become files in a private temporary directory for their run and are removed when it ends. MCP servers whose names collide once normalised to bo's name rules are refused, and so is a config value no option offers. A prompt sent while one runs waits its turn; `_session/steering {sessionId, prompt}` sends it into the running one instead. ACP sessions are bo sessions keyed `acp:<uuid>`: `session/list` lists the workspace's sessions (including `bo run` ones, by `ses_…` id), `session/load` replays one from bo's history, `session/resume` reopens without replay (a `ses_…` id only in its own workspace), and `session/delete` ends a turn in progress, then forgets it. bo-only settings go in `_meta.bo` on `session/new` or `session/resume`: `instructions`, `project_instructions`, `skills`, `subagents`, `limits`, `env`, `timeout_s`, validated like `RunSpec` (errors point at `/_meta/bo/…`).
 
 ## Engine mapping
 
@@ -222,6 +251,22 @@ The agent card is at `/.well-known/agent-card.json`; JSON-RPC is at `/a2a`. Exte
 Runs are hermetic with respect to the operator's engine configuration: permission rules, hooks, plugins, MCP servers, claude.ai connectors, bundled skills and profiles in `~/.claude` or `~/.codex/config.toml` never apply, and neither does a workspace's own engine configuration (`.claude/settings.json`, `.codex/config.toml`). Codex runs use `${XDG_STATE_HOME:-~/.local/state}/bo/codex` as `CODEX_HOME`; it keeps session rollouts (for resume and fork), links only the operator's `auth.json`, and never keeps a `config.toml`. Codex still discovers skills under the workspace's `.agents/skills` and the operator's `~/.agents/skills`; it has no switch to turn those off.
 
 Every run owns an engine process group. Completion, failure, cancellation, timeout, server shutdown, and resource exhaustion terminate the entire group with bounded TERM/KILL escalation.
+
+## Performance
+
+`npm run bench` measures real runs ("Reply with exactly: OK" at the lowest effort); `npm run bench -- core` measures
+event fan-out. On the development machine (2026-09-23; Claude Code 2.1.280, codex-cli 0.155.1):
+
+| | Claude Code | Codex |
+|---|---|---|
+| startup probe | 0.7 s | 2.9 s |
+| created → session reported (engine started) | p50 0.8 s | p50 0.5 s |
+| created → first streamed text | p50 2.4 s | p50 3.5 s |
+| created → finished | p50 3.3 s | p50 3.7 s |
+
+Engine start is under a second on both, so bo does not pre-warm engines; the rest is model time. Fan-out: 9 000
+items to 32 SSE subscribers in 1.0 s (290 000 events/s, p50 delivery 0.5 s); a subscriber more than 1 024 events
+behind is dropped and resumes with `Last-Event-ID` at once, missing nothing.
 
 ## Verification
 

@@ -22,7 +22,7 @@ test("translator: items, deltas, usage, subagents, outcome", () => {
     ["item/started", { threadId: "th", item: { type: "collabAgentToolCall", id: "col", prompt: "echo", receiverThreadIds: ["child"], status: "inProgress" } }],
     ["item/completed", { threadId: "child", item: { type: "agentMessage", id: "m2", text: "ECHO" } }],
     ["item/completed", { threadId: "th", item: { type: "reasoning", id: "r1", summary: ["think"] } }],
-    ["thread/tokenUsage/updated", { threadId: "th", tokenUsage: { total: { inputTokens: 10, cachedInputTokens: 4, cacheWriteInputTokens: 1, outputTokens: 3, reasoningOutputTokens: 2 } } }],
+    ["thread/tokenUsage/updated", { threadId: "th", tokenUsage: { last: { inputTokens: 10, cachedInputTokens: 4, outputTokens: 3 } } }],
     ["error", { threadId: "th", willRetry: true, error: { message: "retrying" } }],
     ["turn/completed", { threadId: "th", turn: { id: "tu", status: "completed" } }],
   ].flatMap(([method, params]) => t.onNotification(method as string, params));
@@ -33,7 +33,8 @@ test("translator: items, deltas, usage, subagents, outcome", () => {
   assert.equal((ops[5] as { body: { status: string } }).body.status, "denied");
   assert.equal((ops[7] as { parentKey?: string }).parentKey, "col");
   assert.deepEqual((ops[8] as { body: unknown }).body, { type: "reasoning", text: "think" });
-  assert.equal((ops[9] as { body: { type: string } }).body.type, "notice");
+  assert.deepEqual(ops[9], { op: "call", tokens: 13, main: true }, "each model call is reported (input + output)");
+  assert.equal((ops[10] as { body: { type: string } }).body.type, "notice");
   assert.deepEqual(t.onNotification("turn/plan/updated", { threadId: "th", plan: [{ step: "a", status: "inProgress" }, { step: "b", status: "pending" }] }), [
     { op: "upsert", key: "plan", body: { type: "plan", steps: [{ text: "a", status: "in_progress" }, { text: "b", status: "pending" }] } },
   ], "the plan tool maps onto the same plan item as Claude's");
@@ -41,8 +42,8 @@ test("translator: items, deltas, usage, subagents, outcome", () => {
   assert.deepEqual(t.onNotification("thread/tokenUsage/updated", {
     threadId: "child", tokenUsage: { total: { inputTokens: 1, cachedInputTokens: 0, outputTokens: 1 }, last: { inputTokens: 7, cachedInputTokens: 2, outputTokens: 3 } },
   }), [{ op: "call", tokens: 10, main: false }], "every model call is reported, subagents' too");
-  assert.deepEqual(t.outcome(), { ok: true, result: { kind: "text", text: "Hello" }, usage: { input_tokens: 10, output_tokens: 3, cached_input_tokens: 4 } },
-    "OpenAI totals already include cached input and reasoning output");
+  assert.deepEqual(t.outcome(), { ok: true, result: { kind: "text", text: "Hello" }, usage: { input_tokens: 17, output_tokens: 6, cached_input_tokens: 6 } },
+    "this run: every call of every thread (main 10/3/4 + subagent 7/3/2); OpenAI input includes cached, output includes reasoning");
 });
 
 test("translator outcomes: schema, failures", () => {
@@ -268,4 +269,19 @@ test("translator: neutral actions, notices, final answer, error codes", () => {
   const overloaded = createTranslator({});
   overloaded.onNotification("turn/completed", { threadId: "", turn: { id: "t", status: "failed", error: { message: "busy", codexErrorInfo: "serverOverloaded" } } });
   assert.equal((overloaded.outcome() as { error: { code: string } }).error.code, "rate_limited");
+});
+
+test("file changes carry hunks: updates as sent, a new file's content and a deleted file's as whole hunks", () => {
+  const t = createTranslator({});
+  t.setMainThread("th");
+  const [op] = t.onNotification("item/completed", { threadId: "th", item: { type: "fileChange", id: "f", status: "completed", changes: [
+    { path: "/w/a.txt", kind: { type: "update", move_path: null }, diff: "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n" },
+    { path: "/w/b.txt", kind: { type: "add" }, diff: "hi\n" },
+    { path: "/w/c.txt", kind: { type: "delete" }, diff: "gone\n" },
+  ] } });
+  assert.deepEqual((op as { body: { action: unknown } }).body.action, { kind: "edit", changes: [
+    { path: "/w/a.txt", change: "modify", diff: "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n" },
+    { path: "/w/b.txt", change: "add", diff: "@@ -0,0 +1,1 @@\n+hi\n" },
+    { path: "/w/c.txt", change: "delete", diff: "@@ -1,1 +0,0 @@\n-gone\n" },
+  ] });
 });

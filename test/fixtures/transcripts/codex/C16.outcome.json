@@ -5,8 +5,8 @@
     "text": "The echoer subagent replied: **ECHO-OK-7**."
   },
   "usage": {
-    "input_tokens": 36670,
-    "output_tokens": 159,
-    "cached_input_tokens": 23936
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

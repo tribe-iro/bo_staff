@@ -105,7 +105,7 @@ test("problems: validation, media type, size, json, routes, lookups", async () =
   assert.equal(big.headers.get("connection"), "close");
   const badResponse = await (await post(`${s.url}/v1/runs/run_x/items/i/response`, { answers: { q: [1] } })).json() as { type: string; errors: { pointer: string }[] };
   assert.equal(badResponse.type, "urn:bo:problem:invalid_request");
-  assert.deepEqual(badResponse.errors.map((e) => e.pointer), ["/answers/q"]);
+  assert.deepEqual(badResponse.errors.map((e) => e.pointer), ["/answers/q/0"], "the offending entry itself");
 });
 
 test("SSE disconnects release their subscription immediately, even while the run waits", async () => {
@@ -224,4 +224,29 @@ test("sessions: a finished run is listed for its workspace, and session.latest c
   const next = await (await post(`${s.url}/v1/runs`, { input: [{ kind: "text", text: "and then" }], workspace: { root }, session: { latest: true } })).json() as { id: string };
   await events(`${s.url}/v1/runs/${next.id}/events`);
   assert.deepEqual(seen, [undefined, "first"]);
+});
+
+test("session history: GET a session and its runs (items in final state), DELETE forgets it, 404 after", async () => {
+  const s = await boot({}, async (spec, io) => {
+    const r = spec as import("../src/spec.ts").ResolvedSpec;
+    io.session(r.session?.native ?? "native-h");
+    io.upsert("a", { type: "action", action: { kind: "shell", command: "ls" }, status: "running" });
+    io.upsert("a", { type: "action", action: { kind: "shell", command: "ls" }, status: "completed" });
+    return ok("done");
+  });
+  const root = await tmpdir();
+  for (const text of ["first", "second"]) {
+    const run = await (await post(`${s.url}/v1/runs`, { input: [{ kind: "text", text }], workspace: { root }, ...(text === "second" ? { session: { latest: true } } : {}) })).json() as { id: string };
+    await events(`${s.url}/v1/runs/${run.id}/events`);
+  }
+  const [session] = await (await fetch(`${s.url}/v1/sessions?workspace=${encodeURIComponent(root)}`)).json() as { id: string }[];
+  const id = encodeURIComponent(session!.id);
+  assert.equal(((await (await fetch(`${s.url}/v1/sessions/${id}`)).json()) as { runs: number }).runs, 2);
+  const runs = await (await fetch(`${s.url}/v1/sessions/${id}/runs`)).json() as { run: { status: string; result: { text: string } }; items: { type: string; status?: string }[] }[];
+  assert.deepEqual(runs.map((r) => r.run.result.text), ["done", "done"]);
+  assert.deepEqual(runs[0]!.items.map((i) => `${i.type}:${i.status}`), ["message:completed", "action:completed"], "one entry per item, in its final state");
+  assert.equal((await fetch(`${s.url}/v1/sessions/${id}`, { method: "DELETE" })).status, 204);
+  const gone = await fetch(`${s.url}/v1/sessions/${id}/runs`);
+  assert.equal(gone.status, 404);
+  assert.equal(((await gone.json()) as { type: string }).type, "urn:bo:problem:session_not_found");
 });

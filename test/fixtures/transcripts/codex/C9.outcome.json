@@ -5,8 +5,8 @@
     "text": "I couldn’t create `b.txt`. Automatic approval review rejected the workspace write; no reason was provided."
   },
   "usage": {
-    "input_tokens": 41114,
-    "output_tokens": 267,
-    "cached_input_tokens": 39296
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, symlink, writeFile } from "node:fs/promises";
+import { mkdir, realpath, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { encodeSession } from "../src/ids.ts";
 import { parseResponse, resolveSpec } from "../src/spec.ts";
@@ -179,7 +179,7 @@ test("response bodies: exactly one of decision or answers, answers are string li
   const both = parseResponse({ decision: "allow", answers: {} });
   assert.ok("problem" in both && both.problem.type === "urn:bo:problem:invalid_request");
   const bad = parseResponse({ answers: { "a/b": [1] } });
-  assert.ok("problem" in bad && bad.problem.errors?.[0]?.pointer === "/answers/a~1b");
+  assert.ok("problem" in bad && bad.problem.errors?.[0]?.pointer === "/answers/a~1b/0");
 });
 
 test("engine availability is enforced; every capability works on every engine", async () => {
@@ -209,16 +209,19 @@ test("project instructions: AGENTS.md then CLAUDE.md, a linked duplicate once, b
   assert.ok("spec" in off && off.spec.instructions === undefined);
   await writeFile(path.join(other, "CLAUDE.md"), "x".repeat(33 * 1024));
   assert.deepEqual(await errors({ ...body, workspace: { root: other } }), ["/project_instructions CLAUDE.md must be at most 32 KiB"]);
+  const looping = await tmpdir();
+  await symlink("AGENTS.md", path.join(looping, "AGENTS.md"));
+  assert.deepEqual(await errors({ ...body, workspace: { root: looping } }), ["/project_instructions AGENTS.md could not be read"]);
 });
 
 test("env: names, values, and reserved BO_* names", async () => {
   const { body } = await base();
   const r = await resolveSpec({ ...body, env: { GITHUB_TOKEN: "t", _X1: "" } }, ctx);
   assert.ok("spec" in r && r.spec.env.GITHUB_TOKEN === "t");
-  const e = await errors({ ...body, env: { BO_TOKEN: "x", "1BAD": "x", OK: 3 } });
-  assert.ok(e.includes("/env/BO_TOKEN BO_* names are reserved"), e.join());
-  assert.ok(e.some((x) => x.startsWith("/env/1BAD key must match")), e.join());
-  assert.ok(e.includes("/env must map strings to strings"), e.join());
+  const shape = await errors({ ...body, env: { "1BAD": "x", OK: 3 } });
+  assert.ok(shape.some((x) => x.startsWith("/env/1BAD key must match")), shape.join());
+  assert.ok(shape.includes("/env/OK must be a string"), shape.join());
+  assert.deepEqual(await errors({ ...body, env: { BO_TOKEN: "x" } }), ["/env/BO_TOKEN BO_* names are reserved"], "checked once the shape is right");
 });
 
 test("limits are validated", async () => {
@@ -259,6 +262,48 @@ test("session.latest resolves the workspace's newest session (for engine, when g
   const none = await resolveSpec({ ...body, session: { latest: true } }, ctx, SessionIndex.memory());
   assert.ok("problem" in none);
   assert.deepEqual(none.problem.errors, [{ pointer: "/session/latest", detail: `no earlier session in ${real}` }]);
-  assert.deepEqual(await errors({ ...body, session: { latest: true, id: claude } }), ["/session must have exactly one of id or latest"]);
+  assert.deepEqual(await errors({ ...body, session: { latest: true, id: claude } }), ["/session must have exactly one of id, latest or key"]);
   assert.deepEqual(await errors({ ...body, session: { latest: false } }), ["/session/latest must be true"]);
+});
+
+test("a continued or forked session carries the engine's totals as this run's usage baseline", async () => {
+  const { root, body } = await base();
+  const index = SessionIndex.memory();
+  const id = encodeSession("claude-code", "c1");
+  const totals = { input_tokens: 90, output_tokens: 9, cached_input_tokens: 50 };
+  index.note({ id, engine: "claude-code", workspace: await realpath(root), input: [], ended: { usage: totals, totals } });
+  for (const session of [{ id }, { id, fork: true }]) {
+    const r = await resolveSpec({ ...body, session }, ctx, index);
+    assert.ok("spec" in r && r.spec.session?.totals === totals, JSON.stringify(session));
+  }
+  const fresh = await resolveSpec({ ...body, session: { id: encodeSession("claude-code", "unknown") } }, ctx, index);
+  assert.ok("spec" in fresh && fresh.spec.session?.totals === undefined);
+});
+
+test("session.key continues the keyed session in this workspace, or starts one under the key", async () => {
+  const { root, body } = await base();
+  const real = await import("node:fs/promises").then((f) => f.realpath(root));
+  const index = SessionIndex.memory();
+  const started = await resolveSpec({ ...body, session: { key: "acp:abc" } }, ctx, index);
+  assert.ok("spec" in started && started.spec.session === undefined && started.spec.sessionKey === "acp:abc", "no session yet: a new one, under the key");
+  const id = encodeSession("codex", "t1");
+  index.note({ id, engine: "codex", workspace: real, input: [], key: "acp:abc" });
+  const continued = await resolveSpec({ ...body, session: { key: "acp:abc" } }, ctx, index);
+  assert.ok("spec" in continued && continued.spec.session?.native === "t1" && continued.spec.engine === "codex" && continued.spec.sessionKey === undefined);
+  assert.deepEqual(await errors({ ...body, session: { key: "no spaces" } }), ["/session/key must match ^[A-Za-z0-9._:-]{1,128}$"]);
+  assert.deepEqual(await errors({ ...body, session: { key: "acp:none", fork: true } }, ctx), [`/session/fork no session with key acp:none in ${real} to fork`]);
+});
+
+test("a session belongs to its workspace: continuing or forking it from another is a field error", async () => {
+  const { body } = await base();
+  const index = SessionIndex.memory();
+  const id = encodeSession("claude-code", "c1");
+  index.note({ id, engine: "claude-code", workspace: "/elsewhere", input: [] });
+  for (const session of [{ id }, { id, fork: true }]) {
+    const r = await resolveSpec({ ...body, session }, ctx, index);
+    assert.ok("problem" in r);
+    assert.deepEqual(r.problem.errors, [{ pointer: "/session/id", detail: "belongs to /elsewhere; continue it there" }]);
+  }
+  const unknown = await resolveSpec({ ...body, session: { id: encodeSession("claude-code", "gone") } }, ctx, index);
+  assert.ok("spec" in unknown, "a session bo no longer indexes is the engine's to find");
 });

@@ -1,7 +1,8 @@
 // TypeScript SDK for bo /v1. Sugar (string input/workspace) is expanded here; the wire only sees canonical shapes.
 
-import type { EngineInfo, Item, Part, Response, Run, RunSpec, Session, StreamEvent } from "./model.ts";
+import type { EngineInfo, Item, Part, Response, Run, RunSpec, Session, SessionRun, StreamEvent } from "./model.ts";
 import { TERMINAL } from "./model.ts";
+import { codePoints, dropCodePoints } from "./format.ts";
 import { isProblem, type Problem } from "./problems.ts";
 
 /** `RunSpec`, plus `input` and `workspace` as plain strings. */
@@ -99,6 +100,11 @@ export class Bo {
     /** Newest first; one workspace (an absolute path on the server's machine), or all. */
     list: (workspace?: string): Promise<Session[]> =>
       this.transport.request("GET", `/v1/sessions${workspace ? `?workspace=${encodeURIComponent(workspace)}` : ""}`),
+    get: (id: string): Promise<Session> => this.transport.request("GET", sessionPath(id)),
+    /** The session's finished runs with their items, oldest first. */
+    runs: (id: string): Promise<SessionRun[]> => this.transport.request("GET", `${sessionPath(id)}/runs`),
+    /** Forgets the session in bo (the engine's own history is untouched). */
+    delete: (id: string): Promise<void> => this.transport.request("DELETE", sessionPath(id)),
   };
 }
 
@@ -113,24 +119,45 @@ export class RunHandle {
     this.run = run;
   }
 
-  /** Server-sent events, resuming with Last-Event-ID across disconnects (5 attempts, exponential backoff). */
+  /**
+   * Server-sent events, resuming with Last-Event-ID across disconnects. A stream the server ended after delivering
+   * events (a subscriber that fell behind is dropped) resumes at once; failures back off exponentially (5 attempts).
+   * Deltas come out exactly once: text a resumed stream sends again is dropped.
+   */
   async *events(opts: { after?: number; signal?: AbortSignal } = {}): AsyncGenerator<StreamEvent> {
     let last = opts.after ?? 0;
     let attempt = 0;
+    /** Code points of each item's streamed text received since its latest version. */
+    const streamed = new Map<string, number>();
     for (;;) {
+      let progressed = false;
       try {
         const body = await this.transport.stream(`${runPath(this.id)}/events`, last ? { "last-event-id": String(last) } : {}, opts.signal);
         for await (const e of parseSse(body)) {
           attempt = 0;
+          progressed = true;
           if ("id" in e) last = e.id;
           if (e.event === "run") this.run = e.data;
+          if (e.event === "item") streamed.delete(e.data.id);
+          if (e.event === "delta") {
+            const { item_id, offset, text } = e.data;
+            const have = streamed.get(item_id) ?? 0;
+            const end = offset + codePoints(text);
+            if (end <= have) continue;
+            streamed.set(item_id, end);
+            if (offset < have) {
+              yield { event: "delta", data: { item_id, offset: have, text: dropCodePoints(text, have - offset) } };
+              continue;
+            }
+          }
           yield e;
           if (e.event === "run" && TERMINAL.has(e.data.status)) return;
         }
       } catch (err) {
         if (err instanceof BoProblem || opts.signal?.aborted || attempt >= BACKOFF_MS.length) throw err;
+        progressed = false;
       }
-      await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt++] ?? BACKOFF_MS.at(-1)));
+      if (!progressed) await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt++] ?? BACKOFF_MS.at(-1)));
     }
   }
 
@@ -153,6 +180,10 @@ export class RunHandle {
   cancel(): Promise<void> {
     return this.transport.request("POST", `${runPath(this.id)}/cancel`);
   }
+}
+
+function sessionPath(id: string): string {
+  return `/v1/sessions/${encodeURIComponent(id)}`;
 }
 
 function runPath(id: string): string {

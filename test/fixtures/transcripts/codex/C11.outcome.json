@@ -5,8 +5,8 @@
     "text": "Stopped after 1."
   },
   "usage": {
-    "input_tokens": 23516,
-    "output_tokens": 134,
-    "cached_input_tokens": 20864
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

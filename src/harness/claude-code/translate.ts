@@ -4,7 +4,8 @@ import type { SDKMessage, SDKResultMessage } from "@anthropic-ai/claude-agent-sd
 import type { Action, ErrorCode, ItemBody, Part, Usage } from "../../model.ts";
 import type { ResolvedSpec } from "../../spec.ts";
 import { excerpt } from "../common.ts";
-import { failure, type Op, type Outcome } from "../port.ts";
+import { addHunk, capDiff, patchHunks, replaceHunk, type PatchHunk } from "../../format.ts";
+import { failure, usageSince, ZERO_USAGE, type Op, type Outcome } from "../port.ts";
 
 type Obj = Record<string, unknown>;
 
@@ -21,10 +22,14 @@ export function toAction(name: string, input: Obj): Action {
   switch (name) {
     case "Bash": return { kind: "shell", command: s("command") };
     case "Read": return { kind: "read", paths: [s("file_path")] };
-    case "Edit":
-    case "MultiEdit":
-    case "NotebookEdit": return { kind: "edit", changes: [{ path: s("file_path") || s("notebook_path"), change: "modify" }] };
-    case "Write": return { kind: "edit", changes: [{ path: s("file_path"), change: "add" }] };
+    // Before the tool runs, the diff is the requested replacement (line numbers unknown); the result has the real one.
+    case "Edit": return edit(s("file_path"), "modify", typeof input.old_string === "string" ? replaceHunk(s("old_string"), s("new_string")) : "");
+    case "MultiEdit": {
+      const edits = Array.isArray(input.edits) ? (input.edits as Obj[]) : [];
+      return edit(s("file_path"), "modify", edits.map((e) => replaceHunk(String(e.old_string ?? ""), String(e.new_string ?? ""))).join(""));
+    }
+    case "NotebookEdit": return edit(s("notebook_path"), "modify", "");
+    case "Write": return edit(s("file_path"), "add", addHunk(s("content")));
     case "Grep":
     case "Glob": return { kind: "search", query: s("pattern") };
     case "WebFetch": return { kind: "web", url: s("url") };
@@ -57,7 +62,7 @@ export interface ClaudeTranslator {
   outcome(): Outcome;
 }
 
-export function createTranslator(spec: Pick<ResolvedSpec, "schema">): ClaudeTranslator {
+export function createTranslator(spec: Pick<ResolvedSpec, "schema" | "session">): ClaudeTranslator {
   const actions = new Map<string, Action>();
   const denied = new Set<string>();
   const blockCount = new Map<string, number>();   // message.id → blocks seen (aligns with stream indices)
@@ -98,9 +103,11 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): ClaudeTran
             ops.push(notice("info", "context compacted"));
           } else if (m.subtype === "background_tasks_changed") {
             background = (m.tasks ?? []).filter((t) => t.task_type === "local_agent" && !t.ambient).length;
-          } else if (m.subtype === "task_notification" && m.tool_use_id && !m.ambient) {
-            const action = actions.get(m.tool_use_id);
-            if (action && !denied.has(m.tool_use_id)) {
+          } else if (m.subtype === "task_notification" && !m.ambient) {
+            // A background subagent's tokens are only known when it ends (its model calls are not streamed).
+            if (m.usage?.total_tokens) ops.push({ op: "call", tokens: m.usage.total_tokens, main: false });
+            const action = m.tool_use_id ? actions.get(m.tool_use_id) : undefined;
+            if (m.tool_use_id && action && !denied.has(m.tool_use_id)) {
               ops.push({ op: "upsert", key: m.tool_use_id, body: {
                 type: "action", action, status: m.status === "completed" ? "completed" : "failed", outcome: { excerpt: excerpt(m.summary) },
               } });
@@ -208,9 +215,14 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): ClaudeTran
               continue;
             }
             const action = actions.get(id);
+            // A foreground subagent's tokens arrive with its result (its model calls are not streamed).
+            const subagentTokens = (m as { tool_use_result?: { totalTokens?: unknown } }).tool_use_result?.totalTokens;
+            if (action?.kind === "delegate" && typeof subagentTokens === "number") ops.push({ op: "call", tokens: subagentTokens, main: false });
             if (!action || denied.has(id)) continue;
+            const done = block.is_error ? action : withResultDiff(action, (m as { tool_use_result?: unknown }).tool_use_result);
+            actions.set(id, done);
             const body: ItemBody = {
-              type: "action", action,
+              type: "action", action: done,
               status: block.is_error ? "failed" : "completed",
               outcome: { excerpt: excerpt(textOf(block.content)) },
             };
@@ -225,23 +237,27 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): ClaudeTran
       return ops;
     },
     outcome() {
-      const usage = usageOf(last);
+      // Claude's usage and cost are running totals for the session (a resumed one starts from its saved totals): this
+      // run's share is what they grew by since the baseline.
+      const totals = last ? usageOf(last) : undefined;
+      const usage = totals ? usageSince(totals, spec.session?.totals) : { ...ZERO_USAGE };
+      const settled = (o: Outcome): Outcome => (totals ? { ...o, totals } : o);
       if (last && !last.is_error && last.subtype === "success") {
         if (spec.schema) {
           const data = last.structured_output;
           if (typeof data !== "object" || data === null || Array.isArray(data)) {
-            return failure("invalid_output", "structured output is missing or not an object", usage);
+            return settled(failure("invalid_output", "structured output is missing or not an object", usage));
           }
-          return { ok: true, result: { kind: "data", data }, usage };
+          return settled({ ok: true, result: { kind: "data", data }, usage });
         }
-        return { ok: true, result: { kind: "text", text: last.result }, usage };
+        return settled({ ok: true, result: { kind: "text", text: last.result }, usage });
       }
       const code = errorCode(assistantError, last);
       const diagnostic = {
         ...(assistantError ? { assistantError } : {}),
         ...(last ? { subtype: last.subtype, terminalReason: last.terminal_reason } : {}),
       };
-      return failure(code, publicMessage(code), usage, Object.keys(diagnostic).length ? diagnostic : undefined);
+      return settled(failure(code, publicMessage(code), usage, Object.keys(diagnostic).length ? diagnostic : undefined));
     },
   };
 }
@@ -255,6 +271,24 @@ function publicMessage(code: ErrorCode): string {
     case "invalid_output": return "Claude did not produce output matching the schema";
     default: return "Claude execution failed";
   }
+}
+
+/** One changed file; `diff` only when there is one. */
+function edit(path: string, change: "add" | "modify" | "delete", diff: string): Action {
+  return { kind: "edit", changes: [{ path, change, ...(diff ? { diff: capDiff(diff) } : {}) }] };
+}
+
+/**
+ * An edit's exact diff from its tool result: `structuredPatch` for Edit/MultiEdit/Write(update), the whole content for
+ * Write(create). Anything else leaves the action as it was.
+ */
+function withResultDiff(action: Action, result: unknown): Action {
+  if (action.kind !== "edit" || action.changes.length !== 1 || !result || typeof result !== "object") return action;
+  const r = result as { type?: unknown; content?: unknown; structuredPatch?: unknown };
+  const [change] = action.changes;
+  if (r.type === "create" && typeof r.content === "string") return edit(change!.path, "add", addHunk(r.content));
+  if (!Array.isArray(r.structuredPatch)) return action;
+  return edit(change!.path, "modify", patchHunks(r.structuredPatch as PatchHunk[]));
 }
 
 function num(v: unknown): number {
@@ -293,11 +327,10 @@ function errorCode(assistantError: string | undefined, last: SDKResultMessage | 
 }
 
 /**
- * `modelUsage` and `total_cost_usd` are session totals (a resumed session starts from its saved totals), so the
- * latest result is the total. Anthropic's `inputTokens` excludes cache reads and writes; bo's `input_tokens` does not.
+ * The session's running totals as of this result (`modelUsage` covers main, subagent and internal calls). Anthropic's
+ * `inputTokens` excludes cache reads and writes; bo's `input_tokens` does not.
  */
-function usageOf(last: SDKResultMessage | undefined): Usage {
-  if (!last) return { input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 };
+function usageOf(last: SDKResultMessage): Usage {
   const models = Object.values(last.modelUsage ?? {});
   return {
     input_tokens: models.reduce((n, u) => n + u.inputTokens + u.cacheReadInputTokens + u.cacheCreationInputTokens, 0),

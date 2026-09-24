@@ -68,3 +68,13 @@ test("engineEnv drops bo's own configuration and applies overrides", () => {
   const env = engineEnv({ PATH: "/bin", BO_TOKEN: "t", BO_ALLOW_SUBSCRIPTION_AUTH: "1", ROBOT: "keep", TMPDIR: "/tmp" }, { TMPDIR: "/private" });
   assert.deepEqual(env, { PATH: "/bin", ROBOT: "keep", TMPDIR: "/private" });
 });
+
+test("usage arithmetic: sums, and a run's share of an engine's running totals", async () => {
+  const { addUsage, usageSince } = await import("../src/harness/port.ts");
+  const u = (i: number, o: number, c: number, cost?: number) => ({ input_tokens: i, output_tokens: o, cached_input_tokens: c, ...(cost === undefined ? {} : { cost_usd: cost }) });
+  assert.deepEqual(addUsage(u(1, 2, 3), u(10, 20, 30, 0.5)), u(11, 22, 33, 0.5));
+  assert.deepEqual(addUsage(u(1, 2, 3), u(1, 1, 1)), u(2, 3, 4), "no cost when neither side has one");
+  assert.deepEqual(usageSince(u(150, 30, 90, 0.3), u(100, 20, 60, 0.2)), { ...u(50, 10, 30), cost_usd: 0.3 - 0.2 });
+  assert.deepEqual(usageSince(u(150, 30, 90), undefined), u(150, 30, 90), "no baseline: all of it");
+  assert.deepEqual(usageSince(u(40, 5, 10), u(100, 20, 60)), u(40, 5, 10), "totals below the baseline: the engine started over");
+});

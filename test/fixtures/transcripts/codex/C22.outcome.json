@@ -5,8 +5,8 @@
     "text": "DATA-OK-3"
   },
   "usage": {
-    "input_tokens": 11681,
-    "output_tokens": 9,
-    "cached_input_tokens": 9344
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

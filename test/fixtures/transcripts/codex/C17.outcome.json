@@ -5,8 +5,8 @@
     "text": "Created `/tmp/bo-extra-KQ82xm/d.txt` containing `ok`. I couldn’t create `../outside.txt` because the parent directory is read-only in this workspace."
   },
   "usage": {
-    "input_tokens": 35707,
-    "output_tokens": 274,
-    "cached_input_tokens": 32640
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

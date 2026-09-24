@@ -9,5 +9,11 @@
     "output_tokens": 239,
     "cached_input_tokens": 34161,
     "cost_usd": 0.11109820000000001
+  },
+  "totals": {
+    "input_tokens": 47406,
+    "output_tokens": 239,
+    "cached_input_tokens": 34161,
+    "cost_usd": 0.11109820000000001
   }
 }

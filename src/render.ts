@@ -1,8 +1,8 @@
 // Terminal presentation for the CLI: one voice for runs, listings, prompts and errors.
 // stdout carries only results; everything else goes to stderr. Colour only on a TTY, never with NO_COLOR.
 
-import { count, duration, summary } from "./format.ts";
-import type { EngineInfo, ErrorCode, Item, Run, Session, StreamEvent } from "./model.ts";
+import { count, duration, summary, usd } from "./format.ts";
+import type { Action, EngineInfo, ErrorCode, Item, Run, Session, SessionRun, StreamEvent, Usage } from "./model.ts";
 import type { Problem } from "./problems.ts";
 
 export interface Stream { write(s: string): unknown; isTTY?: boolean }
@@ -106,6 +106,8 @@ export class RunView {
   private readonly out: Stream;
   private readonly style: Style;
   private readonly verbosity: Verbosity;
+  /** Rendering a stored run (`bo show`): no status line, no "continue" hint. */
+  private readonly replay: boolean;
   /** Where the agent's top-level words go: the terminal's stdout, else stderr from -v, else nowhere (piped). */
   private readonly words: Stream | undefined;
   private readonly status: StatusLine;
@@ -120,13 +122,14 @@ export class RunView {
   private readonly awaiting = new Set<string>();
   private plan = "";
 
-  constructor(out: Stream, err: Stream, opts: { verbosity?: Verbosity; style?: Style } = {}) {
+  constructor(out: Stream, err: Stream, opts: { verbosity?: Verbosity; style?: Style; replay?: boolean } = {}) {
     this.out = out;
     this.err = err;
     this.style = opts.style ?? styleFor(err);
     this.verbosity = opts.verbosity ?? 0;
+    this.replay = opts.replay ?? false;
     this.words = out.isTTY ? out : this.verbosity > 0 ? err : undefined;
-    this.status = new StatusLine(this.verbosity === 0 && err.isTTY ? err : { write: () => undefined }, this.style);
+    this.status = new StatusLine(this.verbosity === 0 && err.isTTY && !this.replay ? err : { write: () => undefined }, this.style);
     this.status.draw();
   }
 
@@ -173,8 +176,9 @@ export class RunView {
         } else if (!this.seen.has(item.id)) {
           this.step(`${pad}${dim(`▸ ${what}`)}`);
         }
-        if (v >= 2 && (item.status === "completed" || item.status === "failed") && item.outcome?.excerpt) {
-          this.step(indent(dim(lastLines(item.outcome.excerpt, 6)), `${pad}  `));
+        if (v >= 2 && (item.status === "completed" || item.status === "failed")) {
+          for (const line of diffLines(item.action, this.style, `${pad}  `)) this.step(line);
+          if (item.outcome?.excerpt) this.step(indent(dim(lastLines(item.outcome.excerpt, 6)), `${pad}  `));
         }
         this.seen.add(item.id);
         return;
@@ -224,11 +228,11 @@ export class RunView {
       const spend = [
         run.model, took,
         u.input_tokens || u.output_tokens ? `${count(u.input_tokens)} in${u.cached_input_tokens ? ` (${count(u.cached_input_tokens)} cached)` : ""} · ${count(u.output_tokens)} out` : undefined,
-        u.cost_usd !== undefined ? `$${u.cost_usd.toFixed(u.cost_usd < 1 ? 4 : 2)}` : undefined,
+        u.cost_usd !== undefined ? usd(u.cost_usd) : undefined,
       ].filter(Boolean).join(" · ");
       if (run.status === "completed") lines.push(`${green("✓")} ${bold("done")}${spend ? dim(` · ${spend}`) : ""}`);
       else if (run.status === "failed" && spend) lines.push(dim(`  ${spend}`));
-      if (run.session_id && run.status !== "cancelled") lines.push(dim("  continue: bo run -c \"…\""));
+      if (run.session_id && run.status !== "cancelled" && !this.replay) lines.push(dim("  continue: bo run -c \"…\""));
       if (this.verbosity >= 2) lines.push(dim(`  run ${run.id}${run.session_id ? ` · session ${run.session_id}` : ""}`));
     }
     if (!lines.length) return;
@@ -261,6 +265,18 @@ export class RunView {
   }
 }
 
+/** `bo show`: a session's stored runs, each introduced by its prompt, rendered as `bo run` renders a live one. */
+export function showSession(runs: readonly SessionRun[], out: Stream, opts: { verbosity: Verbosity; style: Style }): void {
+  runs.forEach(({ run, items }, i) => {
+    const prompt = items.find((it) => it.type === "message" && it.role === "user");
+    const text = prompt?.type === "message" ? prompt.content.map((p) => (p.kind === "text" ? p.text : `[${p.kind}]`)).join(" ") : "";
+    out.write(`${i ? "\n" : ""}${opts.style.dim(`› ${text.trim().split("\n", 1)[0] ?? ""}`)}\n`);
+    const view = new RunView(out, out, { ...opts, replay: true });
+    for (const item of items) view.event({ event: "item", id: 0, data: item });
+    view.finish(run);
+  });
+}
+
 function lastLines(s: string, n: number): string {
   const lines = s.trimEnd().split("\n");
   return lines.length > n ? `…\n${lines.slice(-n).join("\n")}` : lines.join("\n");
@@ -270,11 +286,32 @@ function indent(s: string, pad: string): string {
   return s.split("\n").map((l) => `${pad}${l}`).join("\n");
 }
 
-/** The prompt for an action awaiting approval. */
+/** The prompt for an action awaiting approval: what it is (an edit shows its diff), then the choices. */
 export function approvalPrompt(item: Extract<Item, { type: "action" }>, style: Style): string {
   const { bold, dim, cyan } = style;
+  const diff = diffLines(item.action, style, "    ");
   return `${cyan("?")} ${bold("allow")} ${summary(item.action)}${item.reason ? dim(`  (${item.reason})`) : ""}\n`
+    + (diff.length ? `${diff.join("\n")}\n` : "")
     + `  ${dim("[y] yes  [a] yes, for the rest of this run  [n] no")} ${cyan("›")} `;
+}
+
+const DIFF_LINES = 40;
+
+/** An edit's diffs, coloured, at most 40 lines per change. */
+function diffLines(action: Action, style: Style, pad: string): string[] {
+  if (action.kind !== "edit") return [];
+  const out: string[] = [];
+  for (const change of action.changes) {
+    if (!change.diff) continue;
+    const all = change.diff.trimEnd().split("\n");
+    if (action.changes.length > 1) out.push(`${pad}${style.dim(change.path)}`);
+    for (const line of all.slice(0, DIFF_LINES)) {
+      const paint = line.startsWith("+") ? style.green : line.startsWith("-") ? style.red : style.dim;
+      out.push(`${pad}${paint(line)}`);
+    }
+    if (all.length > DIFF_LINES) out.push(`${pad}${style.dim(`… ${all.length - DIFF_LINES} more lines`)}`);
+  }
+  return out;
 }
 
 export function questionPrompt(q: { text: string; options?: string[]; multiple: boolean }, style: Style): string {
@@ -321,12 +358,18 @@ export function sessionsTable(sessions: readonly Session[], style: Style, opts: 
     return `${dim(opts.workspace ? `no sessions in ${opts.workspace} yet; \`bo run "…"\` starts one` : "no sessions yet")}\n`;
   }
   const rows = sessions.map((s) => [
-    s.title, s.engine, s.model ?? "–", String(s.runs), `${duration(now - Date.parse(s.updated_at))} ago`,
+    s.title, s.engine, s.model ?? "–", String(s.runs), spent(s.usage), `${duration(now - Date.parse(s.updated_at))} ago`,
     ...(opts.workspace ? [] : [s.workspace]), s.id,
   ]);
-  const head = ["session", "engine", "model", "runs", "last used", ...(opts.workspace ? [] : ["workspace"]), "id"];
+  const head = ["session", "engine", "model", "runs", "tokens", "last used", ...(opts.workspace ? [] : ["workspace"]), "id"];
   const table = columns([head, ...rows], "", (row, i) => (i === 0 ? dim(row) : row), (cell, col, i) => (i > 0 && col === head.length - 1 ? dim(cell) : cell));
   return `${table}\n${dim(opts.workspace ? "  bo run -c continues the newest; bo run --session <id> any other" : "")}${opts.workspace ? "\n" : ""}`;
+}
+
+/** `12.4k in · 830 out · $0.0412`, or `–` when nothing was spent. */
+function spent(u: Usage): string {
+  if (!u.input_tokens && !u.output_tokens) return "–";
+  return `${count(u.input_tokens)} in · ${count(u.output_tokens)} out${u.cost_usd !== undefined ? ` · ${usd(u.cost_usd)}` : ""}`;
 }
 
 /** `bo config`: every setting, its effective value, and where that value comes from. */

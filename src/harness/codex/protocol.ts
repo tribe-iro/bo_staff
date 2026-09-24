@@ -37,7 +37,8 @@ export type ThreadItem =
     type: "commandExecution"; id: string; command: string; status: ItemStatus; exitCode?: number | null; aggregatedOutput?: string | null;
     commandActions?: CommandAction[];
   }
-  | { type: "fileChange"; id: string; status: ItemStatus; changes: { path: string; kind: { type: "add" | "delete" | "update" } }[] }
+  /** `diff`: unified hunks for `update`; the file's content for `add` (verified live); the removed content for `delete`. */
+  | { type: "fileChange"; id: string; status: ItemStatus; changes: { path: string; diff: string; kind: { type: "add" | "delete" | "update" } }[] }
   | { type: "mcpToolCall"; id: string; server: string; tool: string; status: ItemStatus }
   | { type: "webSearch"; id: string; query: string; action?: { type: string; url?: string | null } | null }
   | { type: "imageView"; id: string; path: string }
@@ -58,8 +59,8 @@ export interface AgentMessageDelta { itemId: string; delta: string; threadId: st
 
 /** `inputTokens` includes `cachedInputTokens`; `outputTokens` includes reasoning tokens. */
 export interface TokenUsageBreakdown { inputTokens: number; cachedInputTokens: number; outputTokens: number }
-/** `total` is the thread's running total; `last` is the model call that just finished. */
-export interface TokenUsageUpdated { threadId: string; tokenUsage: { total: TokenUsageBreakdown; last?: TokenUsageBreakdown } }
+/** `last` is the model call that just finished (bo sums these; the thread's running `total` is not read). */
+export interface TokenUsageUpdated { threadId: string; tokenUsage: { last?: TokenUsageBreakdown } }
 export interface ErrorNotification { error: TurnError; threadId: string; willRetry: boolean }
 export interface TurnCompleted { threadId: string; turn: Turn }
 export interface PlanUpdated { threadId: string; plan: { step: string; status: "pending" | "inProgress" | "completed" }[] }

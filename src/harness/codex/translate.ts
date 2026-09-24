@@ -3,7 +3,8 @@
 import type { Action, ActionStatus, ErrorCode, ItemBody, Usage } from "../../model.ts";
 import type { ResolvedSpec } from "../../spec.ts";
 import { excerpt, tail } from "../common.ts";
-import { failure, type Op, type Outcome } from "../port.ts";
+import { addHunk, capDiff, deleteHunk } from "../../format.ts";
+import { addUsage, failure, ZERO_USAGE, type Op, type Outcome } from "../port.ts";
 import type {
   AgentMessageDelta, CommandAction, ErrorNotification, ItemNotification, ItemStatus, McpStartupStatus, PlanUpdated, ThreadItem,
   TokenUsageBreakdown, TokenUsageUpdated, Turn, TurnCompleted, TurnError,
@@ -36,7 +37,12 @@ export function actionFor(item: ThreadItem): { action: Action; status: ActionSta
       return {
         action: {
           kind: "edit",
-          changes: i.changes.map((c) => ({ path: c.path, change: c.kind.type === "add" ? "add" : c.kind.type === "delete" ? "delete" : "modify" })),
+          changes: i.changes.map((c) => {
+            const change = c.kind.type === "add" ? "add" as const : c.kind.type === "delete" ? "delete" as const : "modify" as const;
+            // Codex sends a new file's content, not a diff: normalize every change to hunks.
+            const diff = change === "add" ? addHunk(c.diff ?? "") : change === "delete" ? deleteHunk(c.diff ?? "") : c.diff ?? "";
+            return { path: c.path, change, ...(diff ? { diff: capDiff(diff) } : {}) };
+          }),
         },
         status,
       };
@@ -81,7 +87,7 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): CodexTrans
   const actions = new Map<string, Action>();
   let lastAgentText: string | undefined;
   let finalAnswer: string | undefined;
-  let total: TokenUsageBreakdown | undefined;
+  let usage: Usage = { ...ZERO_USAGE };   // this run: every model call of every thread (main and subagents)
   let turn: Turn | undefined;
   let error: TurnError | undefined;
   let notices = 0;
@@ -143,10 +149,10 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): CodexTrans
         }
         case "thread/tokenUsage/updated": {
           const u = params as TokenUsageUpdated;
-          const main = !mainThread || u.threadId === mainThread;
-          if (main) total = u.tokenUsage.total;
           const last = u.tokenUsage.last;
-          return last ? [{ op: "call", tokens: last.inputTokens + last.outputTokens, main }] : [];
+          if (!last) return [];
+          usage = addUsage(usage, usageOf(last));
+          return [{ op: "call", tokens: last.inputTokens + last.outputTokens, main: !mainThread || u.threadId === mainThread }];
         }
         case "turn/plan/updated": {
           const p = params as PlanUpdated;
@@ -172,7 +178,6 @@ export function createTranslator(spec: Pick<ResolvedSpec, "schema">): CodexTrans
       return [];
     },
     outcome() {
-      const usage = usageOf(total);
       const answer = finalAnswer ?? lastAgentText;
       if (turn?.status === "completed" && answer !== undefined) {
         if (!spec.schema) return { ok: true, result: { kind: "text", text: answer }, usage };
@@ -215,8 +220,7 @@ function errorCode(err: TurnError | undefined): ErrorCode {
   }
 }
 
-/** Thread totals. OpenAI semantics already match bo's: input includes cached tokens, output includes reasoning. */
-function usageOf(t: TokenUsageBreakdown | undefined): Usage {
-  if (!t) return { input_tokens: 0, output_tokens: 0, cached_input_tokens: 0 };
+/** One model call. OpenAI semantics already match bo's: input includes cached tokens, output includes reasoning. */
+function usageOf(t: TokenUsageBreakdown): Usage {
   return { input_tokens: t.inputTokens, output_tokens: t.outputTokens, cached_input_tokens: t.cachedInputTokens };
 }

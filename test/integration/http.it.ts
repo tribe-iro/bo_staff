@@ -103,6 +103,20 @@ for (const target of targets) {
       assert.ok(!existsSync(outside) && !existsSync(path.join(root, "..", "escape2.txt")), `nothing written outside: ${describeRun(f)}`);
     });
 
+    test("edits carry diffs: a modified file's hunks, a deleted file's removed content", { timeout: LIVE_TIMEOUT }, async () => {
+      const root = await workspace({ "a.txt": "one\ntwo\nthree\n", "c.txt": "gone\n" });
+      const f = await runToEnd(server.bo, {
+        input: text("In a.txt change the line two to TWO, and delete c.txt. Use your file editing tools, not the shell."),
+        workspace: { root }, ...selection, permissions: { access: "write" },
+      });
+      assert.equal(f.run.status, "completed", describeRun(f));
+      const changes = actions(f.items).filter((a) => a.status === "completed").flatMap((a) => (a.action.kind === "edit" ? a.action.changes : []));
+      const a = changes.find((c) => c.path.endsWith("a.txt") && c.diff?.includes("+TWO"));
+      assert.ok(a && a.diff!.includes("-two"), `a.txt diff: ${JSON.stringify(changes)}`);
+      const c = changes.find((x) => x.path.endsWith("c.txt"));
+      if (c) assert.match(c.diff ?? "", /^@@ .*\n-gone\n/, `c.txt delete diff: ${JSON.stringify(c)}`);
+    });
+
     test("access write + extra_roots: the extra root is writable", { timeout: LIVE_TIMEOUT }, async () => {
       const root = await workspace();
       const extra = await mkdtemp(path.join(os.tmpdir(), "bo-it-extra-"));

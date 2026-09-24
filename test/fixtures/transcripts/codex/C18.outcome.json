@@ -5,8 +5,8 @@
     "text": "`curl -sI https://example.com` exited with code 6 and produced no output, so there was no HTTP status line to report. Curl could not resolve the host."
   },
   "usage": {
-    "input_tokens": 23445,
-    "output_tokens": 152,
-    "cached_input_tokens": 20864
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

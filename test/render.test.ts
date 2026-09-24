@@ -150,10 +150,41 @@ test("the status line lives only on a terminal and is erased before anything els
   const tty = sink(true);
   const view = new RunView(out.stream, tty.stream, { style: plain });
   view.event(item({ type: "action", action: { kind: "shell", command: "npm test" }, status: "running" }));
-  view.event({ event: "delta", data: { item_id: "itm_m", text: "Done." } });
+  view.event({ event: "delta", data: { item_id: "itm_m", offset: 0, text: "Done." } });
   view.event({ event: "item", id: 99, data: { id: "itm_m", created_at: "", type: "message", role: "agent", content: [{ kind: "text", text: "Done." }], status: "completed" } });
   view.finish(run({ result: { kind: "text", text: "Done." } }));
   assert.match(tty.text(), /⠋ working · 0s/);
   assert.ok(tty.text().endsWith("\r\x1b[2K"), "erased at the end");
   assert.equal(out.text(), "Done.\n", "the streamed answer, once");
+});
+
+test("diff helpers: one hunk format for new, deleted, replaced and patched text; capped; counted", async () => {
+  const { addHunk, capDiff, deleteHunk, diffStat, patchHunks, replaceHunk } = await import("../src/format.ts");
+  assert.equal(addHunk("a\nb\n"), "@@ -0,0 +1,2 @@\n+a\n+b\n");
+  assert.equal(addHunk(""), "", "an empty file has no hunk");
+  assert.equal(deleteHunk("a\n"), "@@ -1,1 +0,0 @@\n-a\n");
+  assert.equal(replaceHunk("two", "TWO"), "@@ @@\n-two\n+TWO\n", "line numbers unknown before the edit");
+  assert.equal(patchHunks([{ oldStart: 1, oldLines: 3, newStart: 1, newLines: 3, lines: [" one", "-two", "+TWO", " three"] }]), "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n");
+  assert.deepEqual(diffStat("@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n+more\n"), { added: 2, removed: 1 });
+  const hunk = (n: number) => `@@ -${n},1 +${n},1 @@\n-${"x".repeat(20_000)}\n+${"y".repeat(20_000)}\n`;
+  const capped = capDiff(hunk(1) + hunk(2) + hunk(3));
+  assert.ok(Buffer.byteLength(capped) <= 64 * 1024);
+  assert.equal(capped, `${hunk(1)}\\ diff truncated\n`, "whole hunks only, then the marker");
+  const giant = capDiff(`@@ -1,1 +1,1 @@\n${`+${"z".repeat(100)}\n`.repeat(1000)}`);
+  assert.ok(giant.startsWith("@@ -1,1 +1,1 @@\n+z") && giant.endsWith("\\ diff truncated\n") && Buffer.byteLength(giant) <= 64 * 1024, "a first hunk too large is cut by lines");
+});
+
+test("edits: -v shows the line counts, -vv the coloured diff; approvals always show the diff", async () => {
+  const { approvalPrompt } = await import("../src/render.ts");
+  const action = { kind: "edit" as const, changes: [{ path: "a.txt", change: "modify" as const, diff: "@@ -1,3 +1,3 @@\n one\n-two\n+TWO\n three\n" }] };
+  const run1 = sink();
+  const v1 = new RunView(sink().stream, run1.stream, { style: plain, verbosity: 1 });
+  v1.event(item({ type: "action", action, status: "completed" }));
+  assert.equal(run1.text(), "  ▸ edit a.txt (+1 −1)\n");
+  const run2 = sink();
+  const v2 = new RunView(sink().stream, run2.stream, { style: plain, verbosity: 2 });
+  v2.event(item({ type: "action", action, status: "completed" }));
+  assert.equal(run2.text(), "  ▸ edit a.txt (+1 −1)\n    @@ -1,3 +1,3 @@\n     one\n    -two\n    +TWO\n     three\n");
+  const prompt = approvalPrompt({ id: "i", created_at: "", type: "action", action, status: "awaiting_approval" }, plain);
+  assert.match(prompt, /^\? allow edit a\.txt \(\+1 −1\)\n    @@ -1,3 \+1,3 @@\n     one\n    -two\n    \+TWO\n     three\n  \[y\] yes/);
 });

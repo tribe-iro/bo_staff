@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { fileURLToPath } from "node:url";
 import {
@@ -172,13 +172,12 @@ export class A2aService implements A2ARequestHandler {
       spec.workspace = { root: this.env.BO_A2A_WORKSPACE };
     }
     spec.input = fromA2aParts(message.parts);
-    // A context is a conversation: it continues its latest session (durable, like any session) unless the caller
-    // chose one explicitly.
-    const latest = this.ctx.sessions.latest({ context: contextId });
-    if (latest && spec.session === undefined) spec.session = { id: latest.id };
+    // A context is a conversation: its session is the one keyed by the context (continued, or started under the key),
+    // unless the caller chose a session explicitly.
+    spec.session ??= { key: contextKey(contextId) };
     const resolved = await resolveSpec(spec, this.ctx.engines, this.ctx.sessions);
     if ("problem" in resolved) raise(resolved.problem);
-    const created = await this.ctx.runs.create(resolved.spec, { context: contextId });
+    const created = await this.ctx.runs.create(resolved.spec);
     if ("problem" in created) raise(created.problem);
     this.runContext.set(created.run.id, contextId);
     return created.run;
@@ -309,6 +308,11 @@ function raise(p: Problem | undefined): void {
     default:
       throw new RequestMalformedError(detail);
   }
+}
+
+/** A context id is the client's string; the session key derived from it is stable and always a valid key. */
+function contextKey(contextId: string): string {
+  return `a2a:${createHash("sha256").update(contextId).digest("hex").slice(0, 32)}`;
 }
 
 function taskStatus(run: Run, contextId: string): TaskStatus {

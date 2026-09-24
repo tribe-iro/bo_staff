@@ -115,9 +115,16 @@ function projectClaudeBlocks(value: unknown): unknown[] {
   });
 }
 
+/** The parts of a tool's structured result the translator reads: created tasks, edit patches, subagent tokens. */
 function projectTaskResult(value: unknown): unknown {
-  const task = asObj(asObj(value).task);
-  return Object.keys(task).length ? { task: pick(task, ["id", "subject"]) } : undefined;
+  const result = asObj(value);
+  const task = asObj(result.task);
+  const projected = {
+    ...(Object.keys(task).length ? { task: pick(task, ["id", "subject"]) } : {}),
+    ...pick(result, ["type", "structuredPatch", "totalTokens"]),
+    ...(result.type === "create" ? pick(result, ["content"]) : {}),
+  };
+  return Object.keys(projected).length ? projected : undefined;
 }
 
 function projectCodexItem(item: Obj): Obj {
@@ -132,7 +139,7 @@ function projectCodexItem(item: Obj): Obj {
     case "fileChange":
       projected.changes = Array.isArray(item.changes) ? item.changes.map((change) => {
         const value = asObj(change);
-        return { path: value.path, kind: pick(asObj(value.kind), ["type"]) };
+        return { path: value.path, diff: value.diff, kind: pick(asObj(value.kind), ["type"]) };
       }) : [];
       break;
     case "mcpToolCall": Object.assign(projected, pick(item, ["server", "tool"])); break;
@@ -149,10 +156,10 @@ function projectCodexItem(item: Obj): Obj {
 function projectToolInput(name: string, input: Obj): Obj {
   switch (name) {
     case "Bash": return pick(input, ["command"]);
-    case "Read":
-    case "Edit":
-    case "MultiEdit":
-    case "Write": return pick(input, ["file_path"]);
+    case "Read": return pick(input, ["file_path"]);
+    case "Edit": return pick(input, ["file_path", "old_string", "new_string"]);
+    case "MultiEdit": return pick(input, ["file_path", "edits"]);
+    case "Write": return pick(input, ["file_path", "content"]);
     case "NotebookEdit": return pick(input, ["notebook_path"]);
     case "Grep":
     case "Glob": return pick(input, ["pattern"]);

@@ -3,6 +3,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createInterface, type Interface } from "node:readline";
+import { Readable, Writable } from "node:stream";
+import * as acp from "@agentclientprotocol/sdk";
+import { BoAcpAgent } from "./acp/agent.ts";
 import { Bo, BoProblem, RunHandle } from "./client.ts";
 import { Config, ConfigError } from "./config.ts";
 import { startServer } from "./http/server.ts";
@@ -10,7 +13,7 @@ import { streamLogger } from "./log.ts";
 import { EXPECTED_WARNINGS } from "./harness/claude-code/index.ts";
 import { ACCESS_LEVELS, ENGINE_IDS, type Item, type ImageMediaType, type Part, type RunSpec } from "./model.ts";
 import {
-  approvalPrompt, configTable, enginesTable, errorText, problemText, questionPrompt, RunView, runsTable, sessionsTable,
+  approvalPrompt, configTable, enginesTable, errorText, problemText, questionPrompt, RunView, runsTable, sessionsTable, showSession,
   styleFor, type Style, type Verbosity,
 } from "./render.ts";
 import { VERSION } from "./version.ts";
@@ -30,12 +33,14 @@ const USAGE = `bo ${VERSION}: Claude Code and Codex behind one service
 usage:
   bo run [flags] <prompt…>       run and print the answer ("-" or no words reads stdin)
   bo run -c <prompt…>            continue this directory's latest session
-  bo sessions [--all]            this directory's sessions (--all: every directory)
+  bo sessions [--all]            this directory's sessions (--all: every directory; --delete <id> forgets one)
+  bo show [<session>]            a session's runs (default: this directory's latest); -v/-vv for steps
   bo runs                        runs of the last 10 minutes
   bo follow <run_id>             follow a run
   bo cancel <run_id>             cancel a run
   bo engines                     engines, models, efforts
   bo config                      every setting, its value, and where it comes from
+  bo acp                         be an ACP agent on stdin/stdout (for editors: Zed, JetBrains, …)
   bo serve [--host HOST] [--port PORT] [--token TOKEN] [--max-runs N] [--default-engine ENGINE]
            [--allow-subscription-auth] [-v]
 
@@ -44,7 +49,7 @@ run flags:
   --skill <dir>…   --mcp <file.json>   --subagents <file.json>
   --workspace <dir>   --extra-root <dir>…   --access <read|write|full>
   --internet | --no-internet   --interactive | --no-interactive
-  --schema <file.json>   -c | --continue   --session <ses_…>   --fork   --image <file>…   --timeout <seconds>
+  --schema <file.json>   -c | --continue   --session <id|key>   --fork   --image <file>…   --timeout <seconds>
   --env <NAME=value>…   --max-turns <n>   --max-tokens <n>   --no-project-instructions
 output: -v (steps, summary)   -vv (reasoning, tool output, ids)   --json (event stream)
 shared: --url <url>   --token <token> (default $BO_TOKEN)
@@ -66,7 +71,7 @@ export async function main(
   }
 }
 
-const COMMANDS = new Set(["serve", "run", "runs", "sessions", "follow", "cancel", "engines", "config"]);
+const COMMANDS = new Set(["serve", "run", "runs", "sessions", "show", "follow", "cancel", "engines", "config", "acp"]);
 const HELP = new Set(["--help", "-h", "help"]);
 
 async function dispatch(argv: string[], io: Io, env: NodeJS.ProcessEnv): Promise<number> {
@@ -85,6 +90,23 @@ async function dispatch(argv: string[], io: Io, env: NodeJS.ProcessEnv): Promise
     return 0;
   }
   const bo = new Bo({ url: config.get("url", shared.url).value!, token: shared.token ?? env.BO_TOKEN });
+  if (head === "acp") {
+    noArgs(shared.args, "acp");
+    // stdout is the protocol: nothing else may be written to it.
+    let agent: BoAcpAgent | undefined;
+    const connection = new acp.AgentSideConnection((conn) => (agent = new BoAcpAgent(conn, bo, {
+      engine: config.get("run.engine").value, model: config.get("run.model").value,
+      effort: config.get("run.effort").value, access: config.get("run.access").value,
+    })), acp.ndJsonStream(Writable.toWeb(process.stdout) as WritableStream<Uint8Array>, Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>));
+    // A signal ends the connection like the editor closing it, so the agent cleans up either way.
+    let code = 0;
+    const stop = (status: number) => () => { code = status; process.stdin.destroy(); };
+    process.once("SIGINT", stop(130));
+    process.once("SIGTERM", stop(143));
+    await connection.closed;
+    await agent?.dispose();
+    return code;
+  }
   const output = { json: shared.json, verbosity: shared.verbosity ?? config.get("run.verbose").value as Verbosity };
   switch (head) {
     case "follow": return follow(await bo.runs.get(onlyArg(shared.args, "run id")), output, io, false);
@@ -95,7 +117,20 @@ async function dispatch(argv: string[], io: Io, env: NodeJS.ProcessEnv): Promise
       io.out.write(shared.json ? `${JSON.stringify(runs)}\n` : runsTable(runs, styleFor(io.out)));
       return 0;
     }
+    case "show": {
+      if (shared.args.length > 1) throw new UsageError("show takes at most one session id");
+      const id = shared.args[0] ?? (await bo.sessions.list(path.resolve(".")))[0]?.id;
+      if (!id) throw new UsageError(`no sessions in ${path.resolve(".")} yet`);
+      const runs = await bo.sessions.runs(id);
+      if (shared.json) io.out.write(`${JSON.stringify(runs)}\n`);
+      else showSession(runs, io.out, { verbosity: output.verbosity, style: styleFor(io.out) });
+      return 0;
+    }
     case "sessions": {
+      if (shared.args[0] === "--delete") {
+        await bo.sessions.delete(onlyArg(shared.args.slice(1), "session id"));
+        return 0;
+      }
       const all = shared.args.includes("--all");
       const rest = shared.args.filter((a) => a !== "--all");
       const workspace = all ? undefined : path.resolve(rest[0] === "--workspace" ? need(rest[1], "--workspace") : ".");
@@ -149,19 +184,21 @@ async function serve(argv: string[], io: Io, config: Config, processEnv: NodeJS.
     token, env, log, verbose,
   });
   io.err.write(banner(server.url, server.authenticated, await server.engines.list(), styleFor(io.err)));
-  await new Promise<void>((resolve) => {
+  return new Promise<number>((resolve) => {
     let stopping = false;
     const stop = () => {
       if (stopping) return;
       stopping = true;
       process.off("SIGINT", stop);
       process.off("SIGTERM", stop);
-      void server.close().then(resolve, resolve);
+      void server.close().then(() => resolve(0), (err: unknown) => {
+        log(`stopped, but ${err instanceof Error ? err.message : String(err)}`);
+        resolve(1);
+      });
     };
     process.on("SIGINT", stop);
     process.on("SIGTERM", stop);
   });
-  return 0;
 }
 
 function takeShared(argv: string[]): { args: string[]; json: boolean; verbosity?: Verbosity; url?: string; token?: string } {
@@ -172,6 +209,7 @@ function takeShared(argv: string[]): { args: string[]; json: boolean; verbosity?
   let token: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
+    if (a === "--") { args.push(...argv.slice(i)); break; }
     if (a === "--json") json = true;
     else if (a === "-v" || a === "-vv") verbosity = Math.min(2, (verbosity ?? 0) + a.length - 1) as Verbosity;
     else if (a === "--url") url = need(argv[++i], "--url");
@@ -197,9 +235,12 @@ async function parseRun(argv: string[], io: Io, config: Config): Promise<{ spec:
   const limits: NonNullable<RunSpec["limits"]> = {};
   const abs = (p: string) => path.resolve(p);
   const readJson = async (file: string) => JSON.parse(await readFile(abs(file), "utf8")) as Record<string, unknown>;
+  let promptOnly = false;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
+    if (a === "--" && !promptOnly) { promptOnly = true; continue; }
+    if (promptOnly) { inputTokens.push(a); continue; }
     const val = () => need(argv[++i], a);
     switch (a) {
       case "--engine": selected.engine = oneOf(val(), ENGINE_IDS, a); break;
@@ -217,7 +258,12 @@ async function parseRun(argv: string[], io: Io, config: Config): Promise<{ spec:
       case "--interactive": interactive = true; break;
       case "--no-interactive": interactive = false; break;
       case "--schema": schema = await readJson(val()); break;
-      case "--session": session = { id: val() }; break;
+      case "--session": {
+        // A bo session id, or a key the session was started under.
+        const ref = val();
+        session = ref.startsWith("ses_") ? { id: ref } : { key: ref };
+        break;
+      }
       case "-c":
       case "--continue": continued = true; break;
       case "--fork": fork = true; break;
@@ -447,4 +493,3 @@ async function readStdin(input: NodeJS.ReadableStream): Promise<string> {
   for await (const c of input as AsyncIterable<Buffer | string>) chunks.push(Buffer.from(c));
   return Buffer.concat(chunks).toString("utf8");
 }
-

@@ -228,7 +228,9 @@ async function runClaude(
     // The CLI exits non-zero after some terminal results (e.g. the turn limit); a classified result outranks the exit.
     const outcome = translator.outcome();
     if (!io.signal.aborted && !outcome.ok && outcome.error.code !== "engine_error") return outcome;
-    if (!io.signal.aborted) return failure("engine_error", "Claude execution failed", outcome.usage, { error: err, stderr: stderr.toString() });
+    if (!io.signal.aborted) {
+      return { ...failure("engine_error", "Claude execution failed", outcome.usage, { error: err, stderr: stderr.toString() }), ...(outcome.totals ? { totals: outcome.totals } : {}) };
+    }
   } finally {
     io.signal.removeEventListener("abort", onAbort);
     io.accept(false);

@@ -5,8 +5,8 @@
     "text": "`integration_marker` returned `MCP-MARKER-MISSING`. I couldn’t call `other_tool`: it isn’t available in this session, and the attempted call returned `TypeError: tools.mcp__fx__other_tool is not a function`."
   },
   "usage": {
-    "input_tokens": 98982,
-    "output_tokens": 328,
-    "cached_input_tokens": 86144
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cached_input_tokens": 0
   }
 }

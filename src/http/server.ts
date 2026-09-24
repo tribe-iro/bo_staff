@@ -98,12 +98,20 @@ export async function startServer(opts: ServerOptions = {}): Promise<BoServer> {
     async close() {
       closing = true;
       await runs.shutdown();
-      await sessions.flush();
-      await Promise.race([Promise.allSettled([...ctx.streams]), new Promise((resolve) => setTimeout(resolve, 3000))]);
+      // Sockets close either way; a session change that could not be written is reported after.
+      let unsaved: unknown;
+      await sessions.flush().catch((err: unknown) => { unsaved = err; });
+      let timer: NodeJS.Timeout | undefined;
+      try {
+        await Promise.race([Promise.allSettled([...ctx.streams]), new Promise((resolve) => { timer = setTimeout(resolve, 3000); })]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
       const closed = new Promise<void>((resolve) => server.close(() => resolve()));
       server.closeIdleConnections();
       server.closeAllConnections();
       await closed;
+      if (unsaved) throw unsaved;
     },
   };
 }

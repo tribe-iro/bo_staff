@@ -9,9 +9,9 @@ import { problem, type Problem } from "../problems.ts";
 import { ruleKey, ZERO_USAGE, type Harness, type Outcome, type RunIO, type Steer } from "../harness/port.ts";
 import type { ResolvedSpec } from "../spec.ts";
 import { AsyncQueue } from "./queue.ts";
-import { SessionIndex } from "./sessions.ts";
+import { SessionIndex, sessionNotFound } from "./sessions.ts";
 import { describe, silent, type Logger } from "../log.ts";
-import { count, duration, summary } from "../format.ts";
+import { codePoints, count, duration, summary, usd } from "../format.ts";
 
 export const AWAIT_EXPIRY_MS = 15 * 60_000;
 export const RETAIN_MS = 10 * 60_000;
@@ -61,6 +61,13 @@ interface RunRecord {
   logBytes: number;
   subscribers: Set<AsyncQueue<StreamEvent>>;
   items: Map<string, Item>;
+  /**
+   * Text streamed into each item since its latest logged version (deltas are not logged). Every new subscriber gets it
+   * as one delta at offset 0, so no one sees the end of a message without its beginning, and a resuming client can
+   * drop what it already has. Counted, with the log, against the run's byte budget.
+   */
+  streamed: Map<string, Streamed>;
+  streamedBytes: number;
   keys: Map<string, string>;
   awaiting: Map<string, Awaiting>;
   messages: AsyncQueue<Steer>;
@@ -71,17 +78,16 @@ interface RunRecord {
   turns: number;
   tokens: number;
   /** Which limit stopped the run. */
-  limit?: string;
+  limit?: { message: string; path: string };
   accepting: boolean;
   ac: AbortController;
   stop: PromiseWithResolvers<StopReason>;
   reason?: StopReason;
   tmpDir: string;
   allowedForRun: Set<string>;
-  sessionKey?: string;
+  /** The session lock the run holds (see `lockOf`). */
+  lock?: string;
   idempotencyKey?: string;
-  /** The A2A context the run belongs to, recorded with its session. */
-  context?: string;
   finished: boolean;
   done: Promise<void>;
 }
@@ -93,6 +99,8 @@ interface IdempotencyRecord {
   expiresAt: number;
 }
 
+interface Streamed { text: string; points: number; bytes: number }
+
 export type Created = { run: Run; replayed: boolean } | { problem: Problem };
 
 export class RunManager {
@@ -100,7 +108,8 @@ export class RunManager {
   /** Finished run ids, oldest first. */
   private readonly finishedOrder = new Set<string>();
   private retainedBytes = 0;
-  private readonly sessionActive = new Map<string, string>();
+  /** Session lock → the run holding it. */
+  private readonly locks = new Map<string, string>();
   private readonly idempotency = new Map<string, IdempotencyRecord>();
   private readonly engines: RunEngines;
   private readonly maxRuns: number;
@@ -127,7 +136,7 @@ export class RunManager {
     return { run: structuredClone(hit.snapshot), replayed: true };
   }
 
-  async create(spec: ResolvedSpec, opts: { idempotency?: { key: string; hash: string }; context?: string } = {}): Promise<Created> {
+  async create(spec: ResolvedSpec, opts: { idempotency?: { key: string; hash: string } } = {}): Promise<Created> {
     const idem = opts.idempotency;
     if (idem) {
       const replayed = this.replay(idem.key, idem.hash);
@@ -140,8 +149,12 @@ export class RunManager {
     for (const record of this.records.values()) if (!record.finished) active++;
     if (active >= this.maxRuns) return { problem: problem("too_many_runs", `at most ${this.maxRuns} runs may be active`) };
 
-    const sessionKey = spec.session && !spec.session.fork ? `${spec.engine}:${spec.session.native}` : undefined;
-    if (sessionKey && this.sessionActive.has(sessionKey)) return { problem: problem("session_busy", "the session already has an active run") };
+    // Resolution awaits engine information. A different run may have indexed this key meanwhile.
+    if (spec.sessionKey && this.sessions.latest({ workspace: spec.root, key: spec.sessionKey })) {
+      return { problem: problem("session_busy", "a session was created under this key while the request was prepared; retry to continue it") };
+    }
+    const lock = lockOf(spec);
+    if (lock && this.locks.has(lock)) return { problem: problem("session_busy", "the session already has an active run") };
     const harness = this.engines.harness(spec.engine);
     const info = this.engines.cached(spec.engine);
     if (!harness || !info) return { problem: problem("engine_unavailable", `${spec.engine} is not configured`) };
@@ -157,12 +170,12 @@ export class RunManager {
       usage: { ...ZERO_USAGE },
     };
     const record: RunRecord = {
-      run, spec, seq: 0, log: [], logBytes: 0, subscribers: new Set(), items: new Map(), keys: new Map(), awaiting: new Map(),
+      run, spec, seq: 0, log: [], logBytes: 0, subscribers: new Set(), items: new Map(), streamed: new Map(), streamedBytes: 0, keys: new Map(), awaiting: new Map(),
       messages: new AsyncQueue(MAX_STEERING), unsettled: new Set(), steers: 0, turns: 0, tokens: 0, accepting: false,
       ac: new AbortController(), stop: Promise.withResolvers<StopReason>(),
-      tmpDir: "", allowedForRun: new Set(), sessionKey, idempotencyKey: idem?.key, context: opts.context, finished: false, done: Promise.resolve(),
+      tmpDir: "", allowedForRun: new Set(), lock, idempotencyKey: idem?.key, finished: false, done: Promise.resolve(),
     };
-    if (sessionKey) this.sessionActive.set(sessionKey, run.id);
+    if (lock) this.locks.set(lock, run.id);
     if (idem) this.idempotency.set(idem.key, {
       requestHash: idem.hash, runId: run.id, snapshot: structuredClone(run), expiresAt: Date.now() + IDEMPOTENCY_MS,
     });
@@ -206,6 +219,13 @@ export class RunManager {
     return { run: structuredClone(run), replayed: false };
   }
 
+  /** Forgets a session in bo; refused while a run holds it (that run would record it again). */
+  deleteSession(id: string): Problem | undefined {
+    if (this.locks.has(id)) return problem("session_busy", "the session has an active run; cancel it first");
+    if (!this.sessions.delete(id)) return sessionNotFound(id);
+    return undefined;
+  }
+
   get(id: string): Run | undefined {
     const record = this.records.get(id);
     return record && structuredClone(record.run);
@@ -232,16 +252,27 @@ export class RunManager {
     const seq = record.seq;
     const queue = new AsyncQueue<StreamEvent>(SUBSCRIBER_EVENTS);
     const after = afterSeq ?? seq;
-    for (let i = firstAfter(record.log, after); i < record.log.length; i++) if (!queue.push(record.log[i]!)) break;
-    if (record.finished || queue.size >= SUBSCRIBER_EVENTS) queue.close();
+    const replayStart = firstAfter(record.log, after);
+    const replayEnd = record.log.length;
+    const terminal = record.finished && replayEnd > replayStart ? record.log[replayEnd - 1] : undefined;
+    const deltas = [...record.streamed].map(([itemId, { text }]): StreamEvent => ({ event: "delta", data: { item_id: itemId, offset: 0, text } }));
+    if (record.finished) queue.close();
     else record.subscribers.add(queue);
     const close = (): void => {
       record.subscribers.delete(queue);
       queue.close();
     };
+    let replayAt = replayStart;
+    let deltaAt = 0;
+    let terminalSent = false;
     const events: AsyncIterable<StreamEvent> = {
       [Symbol.asyncIterator]: () => ({
-        next: () => queue.next(),
+        next: () => {
+          if (replayAt < replayEnd - (terminal ? 1 : 0)) return Promise.resolve({ value: record.log[replayAt++]!, done: false });
+          if (deltaAt < deltas.length) return Promise.resolve({ value: deltas[deltaAt++]!, done: false });
+          if (terminal && !terminalSent) { terminalSent = true; return Promise.resolve({ value: terminal, done: false }); }
+          return queue.next();
+        },
         return: async () => { close(); return { value: undefined, done: true }; },
       }),
     };
@@ -323,12 +354,19 @@ export class RunManager {
     else if (!previous) this.log(`${id}  ▸ ${summary(body.action)}`);
   }
 
-  private noteSession(record: RunRecord, ended: boolean): void {
+  /** Records the run's session; `outcome` when the run ended (its usage and the engine's new totals). */
+  private noteSession(record: RunRecord, outcome?: Outcome): void {
     const { run, spec } = record;
     if (!run.session_id) return;
     this.sessions.note({
-      id: run.session_id, engine: spec.engine, workspace: spec.root, input: spec.input, model: run.model, context: record.context, ended,
+      id: run.session_id, engine: spec.engine, workspace: spec.root, input: spec.input, model: run.model, key: spec.sessionKey,
+      ...(outcome ? { ended: { usage: run.usage, ...(outcome.totals ? { totals: outcome.totals } : {}) } } : {}),
     });
+  }
+
+  private unlock(record: RunRecord): void {
+    if (record.lock && this.locks.get(record.lock) === record.run.id) this.locks.delete(record.lock);
+    record.lock = undefined;
   }
 
   private requestStop(record: RunRecord, reason: StopReason): void {
@@ -349,16 +387,14 @@ export class RunManager {
       messages: record.messages,
       session: (native) => {
         if (record.finished) return;
-        const key = `${record.spec.engine}:${native}`;
-        if (record.sessionKey !== key) {
-          if (record.sessionKey && this.sessionActive.get(record.sessionKey) === record.run.id) this.sessionActive.delete(record.sessionKey);
-          record.sessionKey = key;
-          this.sessionActive.set(key, record.run.id);
-        }
         const id = encodeSession(record.spec.engine, native);
         if (record.run.session_id !== id) {
+          // From here the run holds its session by id (a new keyed session is indexed under its key just below).
+          this.unlock(record);
+          record.lock = id;
+          this.locks.set(id, record.run.id);
           record.run.session_id = id;
-          this.noteSession(record, false);
+          this.noteSession(record);
           this.emitRun(record);
         }
       },
@@ -372,7 +408,13 @@ export class RunManager {
       },
       delta: (key, text) => {
         const itemId = record.keys.get(key);
-        if (!record.finished && itemId && text) this.broadcast(record, { event: "delta", data: { item_id: itemId, text } });
+        if (record.finished || !itemId || !text) return;
+        const bytes = Buffer.byteLength(text);
+        if (!this.fits(record, bytes)) return;
+        const so = record.streamed.get(itemId) ?? { text: "", points: 0, bytes: 0 };
+        record.streamed.set(itemId, { text: so.text + text, points: so.points + codePoints(text), bytes: so.bytes + bytes });
+        record.streamedBytes += bytes;
+        this.broadcast(record, { event: "delta", data: { item_id: itemId, offset: so.points, text } });
       },
       await: (key, body, parentKey) => {
         if (record.finished || record.ac.signal.aborted) return Promise.resolve(undefined);
@@ -392,8 +434,8 @@ export class RunManager {
         record.tokens += tokens;
         // Enforced here for every engine alike: the run stops at the first model call past a limit.
         const { maxTurns, maxTokens } = record.spec.limits;
-        if (maxTurns !== undefined && record.turns > maxTurns) record.limit = `the run went past max_turns (${maxTurns})`;
-        else if (maxTokens !== undefined && record.tokens > maxTokens) record.limit = `the run went past max_tokens (${maxTokens})`;
+        if (maxTurns !== undefined && record.turns > maxTurns) record.limit = { message: `the run went past max_turns (${maxTurns})`, path: "/limits/max_turns" };
+        else if (maxTokens !== undefined && record.tokens > maxTokens) record.limit = { message: `the run went past max_tokens (${maxTokens})`, path: "/limits/max_tokens" };
         if (record.limit) this.requestStop(record, "limit_exceeded");
       },
     };
@@ -416,6 +458,9 @@ export class RunManager {
     if (this.logSteps) this.logStep(record, body, previous);
     // The logged copy is immutable once emitted, so the item table shares it instead of cloning again.
     record.items.set(itemId, logged.data as Item);
+    // A new version of the item carries its own content.
+    record.streamedBytes -= record.streamed.get(itemId)?.bytes ?? 0;
+    record.streamed.delete(itemId);
     return itemId;
   }
 
@@ -440,29 +485,40 @@ export class RunManager {
     if (record.run.status !== status) { record.run.status = status; this.emitRun(record); }
   }
 
-  private emitRun(record: RunRecord, terminal = false): void {
-    const logged = this.emit(record, { event: "run", id: 0, data: record.run }, terminal);
+  private emitRun(record: RunRecord, terminal = false, required = false): boolean {
+    const logged = this.emit(record, { event: "run", id: 0, data: record.run }, terminal, required);
     if (logged && record.idempotencyKey) {
       const idem = this.idempotency.get(record.idempotencyKey);
       if (idem?.runId === record.run.id) idem.snapshot = logged.data as Run;
     }
+    return logged !== undefined;
   }
 
   /** Appends a frozen copy to the log and fans it out; `undefined` when a resource limit refused it. */
-  private emit(record: RunRecord, event: Logged, terminal = false): Logged | undefined {
-    const frozen = { ...event, id: record.seq + 1, data: structuredClone(event.data) } as Logged;
-    const bytes = Buffer.byteLength(JSON.stringify(frozen));
-    const eventLimit = terminal ? MAX_EVENTS : MAX_EVENTS - 1;
-    const byteLimit = terminal ? MAX_BYTES : MAX_BYTES - TERMINAL_RESERVE_BYTES;
-    if (record.log.length >= eventLimit || record.logBytes + bytes > byteLimit) {
+  private emit(record: RunRecord, event: Logged, terminal = false, required = false): Logged | undefined {
+    const candidate = { ...event, id: record.seq + 1 } as Logged;
+    const bytes = Buffer.byteLength(JSON.stringify(candidate));
+    if (!required && record.log.length >= (terminal ? MAX_EVENTS : MAX_EVENTS - 1)) {
       if (!terminal) this.requestStop(record, "resource_exhausted");
       return undefined;
     }
+    if (!required && !this.fits(record, bytes, terminal)) return undefined;
+    const frozen = { ...candidate, data: structuredClone(candidate.data) } as Logged;
     record.seq++;
     record.log.push(frozen);
     record.logBytes += bytes;
     this.broadcast(record, frozen);
     return frozen;
+  }
+
+  /**
+   * Whether `bytes` more fit the run's byte budget (its log and streamed text together); stops the run when not. The
+   * terminal event may use the reserve the others leave.
+   */
+  private fits(record: RunRecord, bytes: number, terminal = false): boolean {
+    if (record.logBytes + record.streamedBytes + bytes <= (terminal ? MAX_BYTES : MAX_BYTES - TERMINAL_RESERVE_BYTES)) return true;
+    if (!terminal) this.requestStop(record, "resource_exhausted");
+    return false;
   }
 
   private broadcast(record: RunRecord, event: StreamEvent): void {
@@ -489,6 +545,10 @@ export class RunManager {
         };
       }
     }
+    this.closeAwaiting(record, "run ended");
+    record.accepting = false;
+    record.messages.close();
+    for (const steer of [...record.unsettled]) steer.dropped("run ended");
     const run = record.run;
     if (record.reason === "cancelled") run.status = "cancelled";
     else if (record.reason === "timeout") {
@@ -496,7 +556,7 @@ export class RunManager {
       run.error = { code: "timeout", message: `timed out after ${record.spec.timeoutMs / 1000}s` };
     } else if (record.reason === "limit_exceeded") {
       run.status = "failed";
-      run.error = { code: "limit_exceeded", message: record.limit ?? "the run went past a limit" };
+      run.error = { code: "limit_exceeded", message: record.limit?.message ?? "the run went past a limit", ...(record.limit ? { path: record.limit.path } : {}) };
     } else if (record.reason === "resource_exhausted") {
       run.status = "failed";
       run.error = { code: "resource_exhausted", message: "run exceeded a resource limit" };
@@ -509,24 +569,33 @@ export class RunManager {
     }
     run.usage = final.usage;
     run.ended_at = new Date().toISOString();
+    record.finished = true;
+    let published = false;
+    let invalidResult = false;
+    let terminalDiagnostic: unknown;
+    try { published = this.emitRun(record, true); } catch (err) { invalidResult = true; terminalDiagnostic = err; }
+    if (!published) {
+      // An oversized result or provider error must not make a completed run invisible to stream consumers.
+      delete run.result;
+      run.status = "failed";
+      run.error = invalidResult
+        ? { code: "engine_error", message: "engine returned an invalid result" }
+        : { code: "resource_exhausted", message: "run exceeded a resource limit" };
+      this.emitRun(record, true, true);
+    }
     const u = run.usage;
     const facts = [
       duration(Date.parse(run.ended_at) - Date.parse(run.created_at)), run.model,
       u.input_tokens || u.output_tokens ? `${count(u.input_tokens)} in · ${count(u.output_tokens)} out` : undefined,
-      u.cost_usd === undefined ? undefined : `$${u.cost_usd.toFixed(4)}`,
+      u.cost_usd === undefined ? undefined : usd(u.cost_usd),
     ].filter(Boolean).join(" · ");
-    if (run.error) this.log(`${run.id}  failed     ${run.error.code}: ${run.error.message} · ${facts}`, describe(final.diagnostic));
+    if (run.error) this.log(`${run.id}  failed     ${run.error.code}: ${run.error.message} · ${facts}`, describe(terminalDiagnostic ?? final.diagnostic));
     else this.log(`${run.id}  ${run.status.padEnd(9)}  ${facts}`);
-    this.closeAwaiting(record, "run ended");
-    record.accepting = false;
-    record.messages.close();
-    for (const steer of [...record.unsettled]) steer.dropped("run ended");
-    record.finished = true;
-    this.emitRun(record, true);
-    this.noteSession(record, true);
+    this.noteSession(record, final);
+    if (run.session_id) this.sessions.append(run.session_id, { run: structuredClone(run), items: [...record.items.values()] });
     for (const queue of record.subscribers) queue.close();
     record.subscribers.clear();
-    if (record.sessionKey && this.sessionActive.get(record.sessionKey) === run.id) this.sessionActive.delete(record.sessionKey);
+    this.unlock(record);
     if (record.tmpDir) await rm(record.tmpDir, { recursive: true, force: true }).catch(() => undefined);
     this.retain(record);
   }
@@ -542,7 +611,7 @@ export class RunManager {
 
   private retain(record: RunRecord): void {
     this.finishedOrder.add(record.run.id);
-    this.retainedBytes += record.logBytes;
+    this.retainedBytes += retained(record);
     setTimeout(() => this.forget(record.run.id), RETAIN_MS).unref();
     for (const oldest of this.finishedOrder) {
       if (this.finishedOrder.size <= RETAIN_MAX && this.retainedBytes <= this.retainBytes) break;
@@ -553,9 +622,22 @@ export class RunManager {
   private forget(id: string): void {
     if (!this.finishedOrder.delete(id)) return;
     const record = this.records.get(id);
-    if (record) this.retainedBytes -= record.logBytes;
+    if (record) this.retainedBytes -= retained(record);
     this.records.delete(id);
   }
+}
+
+/**
+ * What a run holds exclusively: the session it continues (not a fork), or, for a session it starts under a key, that
+ * key in its workspace, until the engine reports the new session.
+ */
+function lockOf(spec: ResolvedSpec): string | undefined {
+  if (spec.session && !spec.session.fork) return encodeSession(spec.engine, spec.session.native);
+  return spec.sessionKey === undefined ? undefined : `key ${JSON.stringify([spec.root, spec.sessionKey])}`;
+}
+
+function retained(record: RunRecord): number {
+  return record.logBytes + record.streamedBytes;
 }
 
 function notFound(id: string): Problem {
